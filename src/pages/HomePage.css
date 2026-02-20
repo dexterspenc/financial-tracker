@@ -1,0 +1,277 @@
+.home-page {
+  padding: 20px;
+  padding-bottom: 80px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  color: #1a202c;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #718096;
+  font-size: 14px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #718096;
+}
+
+/* Stats Section */
+.stats-section {
+  margin-bottom: 25px;
+}
+
+.stats-card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.stats-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.toggle-visibility {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 5px 10px;
+  opacity: 0.6;
+  transition: all 0.3s;
+  border-radius: 8px;
+}
+
+.toggle-visibility:hover {
+  opacity: 1;
+  background: #f7fafc;
+}
+
+.toggle-visibility:active {
+  transform: scale(0.95);
+}
+
+.stats-body {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 15px;
+  color: #718096;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.stat-value.positive {
+  color: #48bb78;
+}
+
+.stat-value.negative {
+  color: #f56565;
+}
+
+.stat-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: 5px 0;
+}
+
+.total-row {
+  padding-top: 10px;
+}
+
+.total-row .stat-label {
+  font-size: 16px;
+  color: #1a202c;
+  font-weight: 700;
+}
+
+.total-row .stat-value {
+  font-size: 22px;
+}
+
+/* Quick Add */
+.quick-add {
+  margin-bottom: 30px;
+}
+
+.quick-add-btn {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s;
+}
+
+.quick-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.quick-add-btn:active {
+  transform: translateY(0);
+}
+
+/* Recent Section */
+.recent-section {
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.section-header h2 {
+  font-size: 20px;
+  color: #1a202c;
+}
+
+.view-all-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.view-all-btn:hover {
+  background: #f7fafc;
+}
+
+/* Transaction List */
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transaction-card {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+}
+
+.transaction-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.txn-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.txn-info {
+  flex: 1;
+}
+
+.txn-category {
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.txn-account {
+  color: #718096;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.txn-note {
+  color: #a0aec0;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.txn-amount {
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.txn-amount.income {
+  color: #48bb78;
+}
+
+.txn-amount.expense {
+  color: #f56565;
+}
+
+.txn-date {
+  font-size: 12px;
+  color: #a0aec0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .home-page {
+    padding: 15px;
+    padding-bottom: 80px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .stats-card {
+    padding: 18px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+
+  .total-row .stat-value {
+    font-size: 20px;
+  }
+}

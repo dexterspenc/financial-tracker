@@ -17,7 +17,7 @@ export const CATEGORIES = {
     'Health', 'Entertainment', 'Shopping', 'Education',
     'Gift', 'Subscription', 'Utility', 'Family',
     'Other Expense', 'Lifestyle', 'Social', 'Self Improvement',
-    'Other Cost', 'Adjustment'
+    'Other Cost', 'Travel'  // ← ADD THIS
   ],
-  Transfer: ['Transfer', 'Topup', 'Investment Buy']
+  Transfer: ['Transfer', 'Topup', 'Investment Buy', 'Investment Sell']  // ← ADD Investment Sell
 };

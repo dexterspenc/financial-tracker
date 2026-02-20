@@ -1,0 +1,10 @@
+.add-page {
+  padding: 20px;
+  padding-bottom: 80px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.add-page .transaction-form {
+  margin-top: 0;
+}
