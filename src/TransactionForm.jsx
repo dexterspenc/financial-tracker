@@ -353,7 +353,7 @@ function TransactionForm() {
                     checked={formData.type === 'Debit'}
                     onChange={handleChange}
                   />
-                  <span>Income (Debit)</span>
+                  <span>Income (Credit)</span>
                 </label>
                 <label className="radio-label">
                   <input
@@ -363,7 +363,7 @@ function TransactionForm() {
                     checked={formData.type === 'Credit'}
                     onChange={handleChange}
                   />
-                  <span>Expense (Credit)</span>
+                  <span>Expense (Debit)</span>
                 </label>
               </div>
             </div>

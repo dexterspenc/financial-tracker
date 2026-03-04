@@ -11,13 +11,13 @@ export const ACCOUNTS = {
 
 // Category Master Data
 export const CATEGORIES = {
-  Income: ['Salary', 'Side Hustle', 'Other Income'],
+  Income: ['Salary', 'Side Hustle', 'Other Income','Reimbursement Received'],
   Expense: [
     'Daily Needs', 'Dating', 'Transport', 'Groceries', 
     'Health', 'Entertainment', 'Shopping', 'Education',
     'Gift', 'Subscription', 'Utility', 'Family',
     'Other Expense', 'Lifestyle', 'Social', 'Self Improvement',
-    'Other Cost', 'Travel'  // ← ADD THIS
+    'Travel', 'Reimbursable Expense'  // ← ADD THIS
   ],
-  Transfer: ['Transfer', 'Topup', 'Investment Buy', 'Investment Sell']  // ← ADD Investment Sell
+  Transfer: ['Transfer', 'Topup', 'Investment Buy', 'Investment Sell', 'Saving', 'Saving Withdrawal']  // ← ADD Investment Sell
 };

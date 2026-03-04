@@ -9,7 +9,7 @@ function HistoryPage() {
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    month: format(new Date(), 'yyyy-MM'),
+    month: 'all',
     account: 'all',
     category: 'all',
     search: ''
