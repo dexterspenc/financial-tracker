@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { format, subMonths } from 'date-fns';
 import { APPS_SCRIPT_URL } from '../config';
 import './AIAdvisorWidget.css';
 
@@ -9,77 +8,23 @@ const QUICK_PROMPTS = [
   'Kategori apa yang paling boros?',
 ];
 
-function buildAnalyticsContext(rows) {
-  const currentMonth = format(new Date(), 'yyyy-MM');
-  let monthIncome = 0;
-  let monthExpense = 0;
-  const expenseByCategory = {};
-  const topExpenses = [];
-  const accountBalances = { Living: 0, Playing: 0, Saving: 0, Investment: 0 };
+function buildTransactionContext(rows) {
+  // rows[0] is the header row — skip it
+  const transactions = rows.slice(1).map((row) => ({
+    id: row[0],
+    date: row[1],
+    month: row[2],
+    account: row[3],
+    account_purpose: row[4],
+    category: row[5],
+    flow_type: row[6],
+    debit: parseFloat(row[7]) || 0,
+    credit: parseFloat(row[8]) || 0,
+    type: row[9],
+    note: row[11] || '',
+  }));
 
-  const months = [];
-  const monthlyData = {};
-  for (let i = 5; i >= 0; i--) {
-    const d = subMonths(new Date(), i);
-    const key = format(d, 'yyyy-MM');
-    months.push(key);
-    monthlyData[key] = { label: format(d, 'MMM yyyy'), income: 0, expense: 0 };
-  }
-
-  for (let i = 1; i < rows.length; i++) {
-    const txnMonth = rows[i][2]?.toString().substring(0, 7);
-    const flowType = rows[i][6];
-    const debit = parseFloat(rows[i][7]) || 0;
-    const credit = parseFloat(rows[i][8]) || 0;
-    const category = rows[i][5];
-    const accountPurpose = rows[i][4];
-
-    if (txnMonth === currentMonth) {
-      if (flowType === 'Income') monthIncome += debit;
-      if (flowType === 'Expense') {
-        monthExpense += credit;
-        expenseByCategory[category] = (expenseByCategory[category] || 0) + credit;
-        topExpenses.push({ category, amount: credit, note: rows[i][11] });
-      }
-    }
-
-    if (accountPurpose && accountBalances[accountPurpose] !== undefined) {
-      accountBalances[accountPurpose] += debit - credit;
-    }
-
-    if (monthlyData[txnMonth]) {
-      if (flowType === 'Income') monthlyData[txnMonth].income += debit;
-      if (flowType === 'Expense') monthlyData[txnMonth].expense += credit;
-    }
-  }
-
-  const netCashflow = monthIncome - monthExpense;
-  const savingRate = monthIncome > 0 ? (netCashflow / monthIncome) * 100 : 0;
-  const totalNetWorth = Object.values(accountBalances).reduce((s, v) => s + v, 0);
-  topExpenses.sort((a, b) => b.amount - a.amount);
-
-  return JSON.stringify(
-    {
-      bulan: format(new Date(), 'MMMM yyyy'),
-      ringkasan: {
-        pemasukan: monthIncome,
-        pengeluaran: monthExpense,
-        cashflow_bersih: netCashflow,
-        tingkat_tabungan_persen: parseFloat(savingRate.toFixed(1)),
-      },
-      pengeluaran_per_kategori: expenseByCategory,
-      saldo_per_tujuan: accountBalances,
-      total_kekayaan_bersih: totalNetWorth,
-      pengeluaran_terbesar: topExpenses.slice(0, 5),
-      tren_6_bulan: months.map((m) => ({
-        bulan: monthlyData[m].label,
-        pemasukan: monthlyData[m].income,
-        pengeluaran: monthlyData[m].expense,
-      })),
-    },
-    null,
-    2
-  );
+  return JSON.stringify(transactions, null, 2);
 }
 
 function AIAdvisorWidget() {
@@ -112,7 +57,7 @@ function AIAdvisorWidget() {
       const data = await response.json();
       const rows = data.values || [];
       if (rows.length > 1) {
-        setAnalyticsContext(buildAnalyticsContext(rows));
+        setAnalyticsContext(buildTransactionContext(rows));
       }
     } catch (err) {
       console.error('AIAdvisorWidget: failed to fetch data', err);
@@ -137,7 +82,7 @@ function AIAdvisorWidget() {
         if (idx === 0) {
           return {
             role: 'user',
-            content: `Data keuangan saya:\n\`\`\`json\n${context}\n\`\`\`\n\nPertanyaan: ${msg.content}`,
+            content: `Berikut adalah semua transaksi keuangan saya (format JSON, kolom: id, date, month, account, account_purpose, category, flow_type, debit, credit, type, note):\n\`\`\`json\n${context}\n\`\`\`\n\nPertanyaan: ${msg.content}`,
           };
         }
         return { role: msg.role, content: msg.content };
@@ -153,7 +98,7 @@ function AIAdvisorWidget() {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
+          max_tokens: 2048,
           system:
             'Kamu adalah financial advisor pribadi yang membantu menganalisis data keuangan pengguna. Data transaksi diberikan dalam format JSON. Jawab dalam Bahasa Indonesia, singkat dan actionable.',
           messages: apiMessages,
