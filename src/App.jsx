@@ -4,6 +4,7 @@ import AddPage from './pages/AddPage';
 import HistoryPage from './pages/HistoryPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import BottomNav from './components/BottomNav';
+import AIAdvisorWidget from './components/AIAdvisorWidget';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/analytics" element={<AnalyticsPage />} />
         </Routes>
         <BottomNav />
+        <AIAdvisorWidget />
       </div>
     </Router>
   );
