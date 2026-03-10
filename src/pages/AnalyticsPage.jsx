@@ -1,31 +1,11 @@
 import { useState, useEffect } from 'react';
 import { format, subMonths } from 'date-fns';
 import { APPS_SCRIPT_URL, ACCOUNTS } from '../config';
-import {
-  Chart as ChartJS,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { Pie, Line } from 'react-chartjs-2';
+import { DonutChart, AreaChart, BarList } from '@tremor/react';
 import AnalyticsTabs from '../components/AnalyticsTabs.jsx';
+import AIAdvisor from '../components/AIAdvisor.jsx';
+import { toast } from '../components/ui/Toast';
 import './AnalyticsPage.css';
-
-ChartJS.register(
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -441,16 +421,15 @@ function AnalyticsPage() {
       }
     } catch (error) {
       console.error('Error saving budget:', error);
-      alert('❌ Failed to save budget');
+      toast.error('Failed to save budget');
     }
   };
 
   const copyFromLastMonth = async () => {
     const lastMonth = format(subMonths(new Date(selectedMonth + '-01'), 1), 'yyyy-MM');
+    const lastMonthLabel = format(new Date(lastMonth + '-01'), 'MMMM yyyy');
 
-    if (!window.confirm(`Copy budgets from ${format(new Date(lastMonth + '-01'), 'MMMM yyyy')}?`)) {
-      return;
-    }
+    if (!window.confirm(`Copy budgets from ${lastMonthLabel}?`)) return;
 
     try {
       const response = await fetch(APPS_SCRIPT_URL, {
@@ -465,14 +444,14 @@ function AnalyticsPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert(`✅ Copied ${result.count} budgets from ${format(new Date(lastMonth + '-01'), 'MMMM yyyy')}`);
+        toast.success(`Copied ${result.count} budgets from ${lastMonthLabel}`);
         await loadBudgets();
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       console.error('Error copying budgets:', error);
-      alert('❌ Failed to copy budgets');
+      toast.error('Failed to copy budgets');
     }
   };
 
@@ -600,7 +579,8 @@ function AnalyticsPage() {
       const rows = data.values || [];
 
       if (rows.length < 2) {
-        alert('No data to export!');
+        toast.info('No data to export');
+        return;
         return;
       }
 
@@ -638,7 +618,7 @@ function AnalyticsPage() {
       }
 
       if (filteredRows.length < 2) {
-        alert('No transactions match your filters!');
+        toast.info('No transactions match your filters');
         return;
       }
 
@@ -667,11 +647,11 @@ function AnalyticsPage() {
       link.click();
       document.body.removeChild(link);
 
-      alert(`✅ Exported ${filteredRows.length - 1} transactions!`);
+      toast.success(`Exported ${filteredRows.length - 1} transactions`);
 
     } catch (error) {
       console.error('Export error:', error);
-      alert('❌ Export failed!');
+      toast.error('Export failed');
     }
   };
 
@@ -1259,36 +1239,23 @@ function AnalyticsPage() {
     });
   };
 
-  const pieChartData = {
-    labels: Object.keys(analytics.expenseByCategory),
-    datasets: [{
-      data: Object.values(analytics.expenseByCategory),
-      backgroundColor: [
-        '#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b',
-        '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3'
-      ],
-      borderWidth: 2,
-      borderColor: '#fff'
-    }]
-  };
+  // Tremor DonutChart data
+  const donutData = Object.entries(analytics.expenseByCategory)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value]) => ({ name, value }));
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: function (context) {
-            const value = context.parsed;
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = ((value / total) * 100).toFixed(1);
-            return `Rp ${value.toLocaleString('id-ID')} (${percentage}%)`;
-          }
-        }
-      }
-    }
-  };
+  // Tremor AreaChart data
+  const areaData = trends.months.map((month, i) => ({
+    month,
+    Income: trends.incomeData[i] || 0,
+    Expense: trends.expenseData[i] || 0,
+  }));
+
+  // Tremor BarList data for top expenses
+  const barListData = analytics.topExpenses.map(exp => ({
+    name: exp.note ? `${exp.category} · ${exp.note}` : exp.category,
+    value: exp.amount,
+  }));
 
   const monthOptions = [];
   for (let i = 0; i < 12; i++) {
@@ -1317,7 +1284,10 @@ function AnalyticsPage() {
       <AnalyticsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {loading ? (
-        <div className="loading">Loading analytics...</div>
+        <div className="loading">
+          <div className="loading-spinner" />
+          <span>Loading analytics…</span>
+        </div>
       ) : (
         <>
           {activeTab === 'overview' && (
@@ -1359,40 +1329,38 @@ function AnalyticsPage() {
               </div>
 
               <div className="breakdown-card">
-                <h2>📊 Expense Breakdown</h2>
-                <div className="breakdown-content">
-                  <div className="chart-container">
-                    {Object.keys(analytics.expenseByCategory).length > 0 ? (
-                      <Pie data={pieChartData} options={chartOptions} />
-                    ) : (
-                      <div className="no-data">No expense data</div>
-                    )}
-                  </div>
-                  <div className="category-list">
-                    {Object.entries(analytics.expenseByCategory)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([category, amount]) => {
-                        const percentage = (amount / analytics.monthExpense * 100).toFixed(1);
+                <h2>Expense Breakdown</h2>
+                {donutData.length > 0 ? (
+                  <>
+                    <DonutChart
+                      data={donutData}
+                      category="value"
+                      index="name"
+                      valueFormatter={(v) => `Rp ${v.toLocaleString('id-ID')}`}
+                      colors={['blue', 'violet', 'indigo', 'cyan', 'emerald', 'rose', 'amber', 'teal', 'purple', 'pink']}
+                      className="tremor-donut"
+                    />
+                    <div className="category-list">
+                      {donutData.map(({ name, value }) => {
+                        const percentage = (value / analytics.monthExpense * 100).toFixed(1);
                         return (
-                          <div key={category} className="category-item">
+                          <div key={name} className="category-item">
                             <div className="category-info">
-                              <div className="category-name">{category}</div>
-                              <div className="category-amount">
-                                Rp {amount.toLocaleString('id-ID')}
-                              </div>
+                              <div className="category-name">{name}</div>
+                              <div className="category-amount">Rp {value.toLocaleString('id-ID')}</div>
                             </div>
                             <div className="category-percent">{percentage}%</div>
                             <div className="category-bar">
-                              <div
-                                className="category-bar-fill"
-                                style={{ width: `${percentage}%` }}
-                              ></div>
+                              <div className="category-bar-fill" style={{ width: `${percentage}%` }} />
                             </div>
                           </div>
                         );
                       })}
-                  </div>
-                </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="no-data">No expense data for this month</div>
+                )}
               </div>
 
               <div className="allocation-card">
@@ -1456,21 +1424,17 @@ function AnalyticsPage() {
               </div>
 
               <div className="top-expenses-card">
-                <h2>🔥 Top 5 Expenses</h2>
-                <div className="expenses-list">
-                  {analytics.topExpenses.map((exp, idx) => (
-                    <div key={idx} className="expense-item">
-                      <div className="expense-rank">{idx + 1}</div>
-                      <div className="expense-details">
-                        <div className="expense-category">{exp.category}</div>
-                        {exp.note && <div className="expense-note">{exp.note}</div>}
-                      </div>
-                      <div className="expense-amount">
-                        Rp {exp.amount.toLocaleString('id-ID')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <h2>Top Expenses</h2>
+                {barListData.length > 0 ? (
+                  <BarList
+                    data={barListData}
+                    valueFormatter={(v) => `Rp ${v.toLocaleString('id-ID')}`}
+                    color="blue"
+                    className="tremor-barlist"
+                  />
+                ) : (
+                  <div className="no-data">No expense data for this month</div>
+                )}
               </div>
             </>
           )}
@@ -1644,56 +1608,17 @@ function AnalyticsPage() {
           {activeTab === 'trends' && (
             <>
               <div className="trend-card">
-                <h2>📈 6-Month Trend</h2>
-                <div className="line-chart-container">
-                  <Line
-                    data={{
-                      labels: trends.months,
-                      datasets: [
-                        {
-                          label: 'Income',
-                          data: trends.incomeData,
-                          borderColor: '#48bb78',
-                          backgroundColor: 'rgba(72, 187, 120, 0.1)',
-                          tension: 0.4,
-                          fill: true
-                        },
-                        {
-                          label: 'Expense',
-                          data: trends.expenseData,
-                          borderColor: '#f56565',
-                          backgroundColor: 'rgba(245, 101, 101, 0.1)',
-                          tension: 0.4,
-                          fill: true
-                        }
-                      ]
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { position: 'top' },
-                        tooltip: {
-                          callbacks: {
-                            label: function (context) {
-                              return `${context.dataset.label}: Rp ${context.parsed.y.toLocaleString('id-ID')}`;
-                            }
-                          }
-                        }
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          ticks: {
-                            callback: function (value) {
-                              return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  />
-                </div>
+                <h2>6-Month Trend</h2>
+                <AreaChart
+                  data={areaData}
+                  index="month"
+                  categories={['Income', 'Expense']}
+                  colors={['emerald', 'rose']}
+                  valueFormatter={(v) => `Rp ${(v / 1000000).toFixed(1)}M`}
+                  showLegend
+                  showGridLines={false}
+                  className="tremor-area"
+                />
               </div>
 
               <div className="weekly-card">
@@ -2029,6 +1954,13 @@ function AnalyticsPage() {
             </>
           )}
 
+          {activeTab === 'ai' && (
+            <AIAdvisor
+              analytics={analytics}
+              trends={trends}
+              selectedMonth={selectedMonth}
+            />
+          )}
         </>
       )}
     </div>

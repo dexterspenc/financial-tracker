@@ -1,7 +1,7 @@
 .analytics-page {
-  padding: 20px;
-  padding-bottom: 80px;
-  max-width: 1200px;
+  padding: 20px var(--page-padding);
+  padding-bottom: calc(var(--nav-height) + 24px);
+  max-width: 600px;
   margin: 0 auto;
 }
 
@@ -9,32 +9,39 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 12px;
 }
 
 .page-header h1 {
-  font-size: 28px;
-  color: #1a202c;
+  font-size: 1.4rem;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .month-selector {
-  padding: 10px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 16px;
+  padding: 9px 32px 9px 13px;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
   font-weight: 600;
-  background: white;
+  font-family: 'Inter', inherit;
+  background: var(--surface-card);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
 }
 
 .month-selector:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
 }
 
 .loading {
@@ -56,11 +63,12 @@
 .accounts-balance-card,
 .transfers-card,
 .activity-card {
-  background: white;
-  border-radius: 20px;
-  padding: 25px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  background: var(--surface-card);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(226,232,240,0.6);
 }
 
 .summary-card h2,
@@ -74,9 +82,11 @@
 .accounts-balance-card h2,
 .transfers-card h2,
 .activity-card h2 {
-  font-size: 20px;
-  color: #1a202c;
-  margin: 0 0 20px 0;
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  letter-spacing: -0.01em;
 }
 
 /* Monthly Summary */
@@ -1402,4 +1412,80 @@
   .category-breakdown-item {
     grid-template-columns: 1fr 50px;
   }
+}
+/* ──────────────────────────────────────────────────────────
+   TREMOR CHART OVERRIDES
+   ────────────────────────────────────────────────────────── */
+
+/* DonutChart */
+.tremor-donut {
+  height: 220px;
+  margin-bottom: 16px;
+}
+
+/* AreaChart */
+.tremor-area {
+  height: 240px;
+}
+
+/* BarList */
+.tremor-barlist {
+  margin-top: 4px;
+}
+
+/* Tremor base resets to match our font */
+.tremor-base {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Override Tremor's default font in chart labels */
+[class*="tremor-"] {
+  font-family: 'Inter', sans-serif;
+}
+
+/* ──────────────────────────────────────────────────────────
+   CARD + COLOR OVERRIDES (token-aligned)
+   ────────────────────────────────────────────────────────── */
+
+/* Fix remaining hardcoded card styles */
+.summary-card,
+.breakdown-card,
+.allocation-card,
+.health-card,
+.top-expenses-card,
+.trend-card,
+.weekly-card,
+.budget-header-card,
+.budget-purposes-card,
+.reports-section,
+.account-modal-overlay {
+  border: 1px solid rgba(226,232,240,0.6);
+}
+
+/* Summary values */
+.summary-value.positive { color: var(--color-income); }
+.summary-value.negative { color: var(--color-expense); }
+
+/* Health bar colors */
+.health-bar-fill.good    { background: var(--color-income); }
+.health-bar-fill.warning { background: #d97706; }
+.health-bar-fill.danger  { background: var(--color-expense); }
+
+/* "No data" placeholder */
+.no-data {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Loading state override */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }

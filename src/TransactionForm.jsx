@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { ArrowDown } from 'lucide-react';
 import { APPS_SCRIPT_URL, ACCOUNTS, CATEGORIES } from './config';
+import { toast } from './components/ui/Toast';
 
 function TransactionForm() {
   const [mode, setMode] = useState('normal'); // 'normal' or 'transfer'
@@ -102,10 +104,8 @@ function TransactionForm() {
       }
     } catch (error) {
       console.error('Error:', error);
-      setMessage({ 
-        type: 'error', 
-        text: '❌ Failed to add transaction' 
-      });
+      toast.error('Failed to add transaction');
+      setMessage({ type: '', text: '' });
     } finally {
       setLoading(false);
     }
@@ -135,10 +135,8 @@ function TransactionForm() {
       body: JSON.stringify({ values: [rowData] })
     });
 
-    setMessage({ 
-      type: 'success', 
-      text: `✅ Transaction ${transactionId} added!` 
-    });
+    toast.success(`Transaction ${transactionId} added!`);
+    setMessage({ type: '', text: '' });
     
     setLastTransactionId(transactionId);
     resetForm();
@@ -195,10 +193,8 @@ function TransactionForm() {
       body: JSON.stringify({ values: [rowData2] })
     });
 
-    setMessage({ 
-      type: 'success', 
-      text: `✅ Transfer ${transferPairId} created! (${transactionId1} & ${transactionId2})` 
-    });
+    toast.success(`Transfer ${transferPairId} created!`);
+    setMessage({ type: '', text: '' });
     
     setLastTransactionId(transactionId2);
     setLastTransferPairId(transferPairId);
@@ -386,7 +382,7 @@ function TransactionForm() {
               </select>
             </div>
 
-            <div className="transfer-arrow">⬇️</div>
+            <div className="transfer-arrow"><ArrowDown size={20} /></div>
 
             <div className="form-group">
               <label>📥 To Account</label>

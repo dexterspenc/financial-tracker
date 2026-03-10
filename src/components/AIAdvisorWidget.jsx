@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Bot, Send, X, Trash2 } from 'lucide-react';
 import { APPS_SCRIPT_URL } from '../config';
 import './AIAdvisorWidget.css';
 
@@ -140,30 +141,23 @@ function AIAdvisorWidget() {
       <div className={`widget-panel ${isOpen ? 'open' : ''}`}>
         <div className="widget-header">
           <div className="widget-header-info">
-            <span className="widget-header-icon">🤖</span>
+            <div className="widget-ai-avatar"><Bot size={18} /></div>
             <div>
               <div className="widget-header-title">AI Financial Advisor</div>
               <div className="widget-header-sub">
-                {dataLoading ? 'Memuat data...' : 'Powered by Claude'}
+                <span className={`widget-status-dot ${dataLoading ? 'loading' : ''}`} />
+                {dataLoading ? 'Loading data…' : 'Powered by Claude'}
               </div>
             </div>
           </div>
           <div className="widget-header-actions">
             {messages.length > 0 && (
-              <button
-                className="widget-clear-btn"
-                onClick={() => setMessages([])}
-                title="Clear chat"
-              >
-                🗑️
+              <button className="widget-clear-btn" onClick={() => setMessages([])} title="Clear chat">
+                <Trash2 size={13} />
               </button>
             )}
-            <button
-              className="widget-close-btn"
-              onClick={() => setIsOpen(false)}
-              title="Close"
-            >
-              ✕
+            <button className="widget-close-btn" onClick={() => setIsOpen(false)} title="Close">
+              <X size={14} />
             </button>
           </div>
         </div>
@@ -171,21 +165,19 @@ function AIAdvisorWidget() {
         <div className="widget-messages">
           {messages.length === 0 ? (
             <div className="widget-empty">
-              <div className="widget-empty-icon">💬</div>
-              <p>Tanyakan apa saja tentang keuangan kamu!</p>
-              {dataLoading && (
-                <p className="widget-empty-sub">Sedang memuat data transaksi...</p>
-              )}
+              <div className="widget-empty-avatar"><Bot size={26} /></div>
+              <p>Ask anything about your finances!</p>
+              {dataLoading && <p className="widget-empty-sub">Loading your transaction data…</p>}
             </div>
           ) : (
             messages.map((msg, idx) => (
               <div key={idx} className={`widget-bubble-row ${msg.role}`}>
                 {msg.role === 'assistant' && (
-                  <span className="widget-avatar">🤖</span>
+                  <span className="widget-avatar-circle ai-avatar"><Bot size={13} /></span>
                 )}
                 <div className={`widget-bubble ${msg.role}`}>{msg.content}</div>
                 {msg.role === 'user' && (
-                  <span className="widget-avatar">👤</span>
+                  <span className="widget-avatar-circle user-avatar">👤</span>
                 )}
               </div>
             ))
@@ -228,12 +220,8 @@ function AIAdvisorWidget() {
             placeholder="Tanya tentang keuangan kamu..."
             disabled={loading || dataLoading}
           />
-          <button
-            type="submit"
-            className="widget-send-btn"
-            disabled={loading || dataLoading || !input.trim()}
-          >
-            ➤
+          <button type="submit" className="widget-send-btn" disabled={loading || dataLoading || !input.trim()}>
+            <Send size={15} />
           </button>
         </form>
       </div>
@@ -244,7 +232,7 @@ function AIAdvisorWidget() {
         onClick={() => setIsOpen((v) => !v)}
         title="AI Financial Advisor"
       >
-        {isOpen ? '✕' : '🤖'}
+        {isOpen ? <X size={20} /> : <Bot size={22} />}
       </button>
     </>
   );

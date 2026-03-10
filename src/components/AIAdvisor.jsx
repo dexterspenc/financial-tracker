@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
+import { Bot, Send, Trash2 } from 'lucide-react';
 import './AIAdvisor.css';
 
 const QUICK_PROMPTS = [
@@ -122,15 +123,15 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
     <div className="ai-advisor-card">
       <div className="ai-advisor-header">
         <div className="ai-advisor-title">
-          <span className="ai-icon">🤖</span>
+          <div className="ai-advisor-avatar"><Bot size={20} /></div>
           <div>
             <h2>AI Financial Advisor</h2>
-            <p className="ai-subtitle">Powered by Claude · Data {monthLabel}</p>
+            <p className="ai-subtitle">Powered by Claude · {monthLabel}</p>
           </div>
         </div>
         {messages.length > 0 && (
           <button className="clear-chat-btn" onClick={() => setMessages([])}>
-            🗑️ Clear
+            <Trash2 size={13} /> Clear
           </button>
         )}
       </div>
@@ -138,21 +139,19 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
       <div className="chat-window">
         {messages.length === 0 ? (
           <div className="chat-empty">
-            <div className="chat-empty-icon">💬</div>
+            <div className="chat-empty-avatar"><Bot size={24} /></div>
             <p>Tanyakan apa saja tentang keuangan kamu!</p>
-            <p className="chat-empty-sub">
-              AI akan menganalisis data transaksi {monthLabel}.
-            </p>
+            <p className="chat-empty-sub">AI akan menganalisis data {monthLabel}.</p>
           </div>
         ) : (
           messages.map((msg, idx) => (
             <div key={idx} className={`chat-bubble-row ${msg.role}`}>
               {msg.role === 'assistant' && (
-                <div className="chat-avatar">🤖</div>
+                <div className="chat-avatar-circle ai"><Bot size={14} /></div>
               )}
               <div className={`chat-bubble ${msg.role}`}>{msg.content}</div>
               {msg.role === 'user' && (
-                <div className="chat-avatar user">👤</div>
+                <div className="chat-avatar-circle user">👤</div>
               )}
             </div>
           ))
@@ -197,12 +196,8 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
           placeholder="Tanya tentang keuangan kamu..."
           disabled={loading}
         />
-        <button
-          type="submit"
-          className="chat-send-btn"
-          disabled={loading || !input.trim()}
-        >
-          ➤
+        <button type="submit" className="chat-send-btn" disabled={loading || !input.trim()}>
+          <Send size={16} />
         </button>
       </form>
     </div>

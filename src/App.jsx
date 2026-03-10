@@ -5,6 +5,7 @@ import HistoryPage from './pages/HistoryPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import BottomNav from './components/BottomNav';
 import AIAdvisorWidget from './components/AIAdvisorWidget';
+import { Toaster } from './components/ui/Toast';
 import './App.css';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         </Routes>
         <BottomNav />
         <AIAdvisorWidget />
+        <Toaster />
       </div>
     </Router>
   );

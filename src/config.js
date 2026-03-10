@@ -11,7 +11,7 @@ export const ACCOUNTS = {
 
 // Category Master Data
 export const CATEGORIES = {
-  Income: ['Salary', 'Side Hustle', 'Other Income','Reimbursement Received'],
+  Income: ['Salary', 'Side Hustle', 'Other Income', 'Reimbursement Received'],
   Expense: [
     'Daily Needs', 'Dating', 'Transport', 'Groceries', 
     'Health', 'Entertainment', 'Shopping', 'Education',

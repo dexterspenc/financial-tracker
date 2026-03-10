@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { APPS_SCRIPT_URL, ACCOUNTS, CATEGORIES } from '../config';
+import { Dialog, DialogContent } from './ui/Dialog';
+import { toast } from './ui/Toast';
 import './EditModal.css';
 
 function EditModal({ transaction, onClose, onSuccess }) {
@@ -13,7 +15,6 @@ function EditModal({ transaction, onClose, onSuccess }) {
     note: ''
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (transaction) {
@@ -31,22 +32,20 @@ function EditModal({ transaction, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
       const month = format(new Date(formData.date), 'yyyy-MM-01');
-      
       const rowData = [
-        transaction.id, // Keep original ID
+        transaction.id,
         formData.date,
         month,
         formData.account,
-        '', // Account_Purpose (calculated by script)
+        '',
         formData.category,
-        '', // Flow_Type (calculated by script)
+        '',
         formData.type === 'Debit' ? formData.amount : '',
         formData.type === 'Credit' ? formData.amount : '',
-        transaction.type, // Keep original transaction type
+        transaction.type,
         transaction.transferPairId || '',
         formData.note
       ];
@@ -69,154 +68,96 @@ function EditModal({ transaction, onClose, onSuccess }) {
         throw new Error(result.error || 'Update failed');
       }
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   if (!transaction) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>✏️ Edit Transaction</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
-        </div>
+    <Dialog open={!!transaction} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent title="Edit Transaction">
+        <form onSubmit={handleSubmit} className="edit-form">
+          <div className="edit-form-grid">
+            <div className="form-group">
+              <label>Date</label>
+              <input type="date" name="date" value={formData.date} onChange={handleChange} required />
+            </div>
 
-        {error && (
-          <div className="error-message">
-            ❌ {error}
-          </div>
-        )}
+            <div className="form-group">
+              <label>Account</label>
+              <select name="account" value={formData.account} onChange={handleChange} required>
+                <option value="">Select Account</option>
+                {Object.entries(ACCOUNTS).map(([purpose, accounts]) => (
+                  <optgroup key={purpose} label={purpose}>
+                    {accounts.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>📅 Date</label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div className="form-group">
+              <label>Category</label>
+              <select name="category" value={formData.category} onChange={handleChange} required>
+                <option value="">Select Category</option>
+                {Object.entries(CATEGORIES).map(([type, categories]) => (
+                  <optgroup key={type} label={type}>
+                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
 
-          <div className="form-group">
-            <label>🏦 Account</label>
-            <select
-              name="account"
-              value={formData.account}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Account</option>
-              {Object.entries(ACCOUNTS).map(([purpose, accounts]) => (
-                <optgroup key={purpose} label={purpose}>
-                  {accounts.map(acc => (
-                    <option key={acc} value={acc}>{acc}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>📂 Category</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Category</option>
-              {Object.entries(CATEGORIES).map(([type, categories]) => (
-                <optgroup key={type} label={type}>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <div className="form-group">
+              <label>Amount (Rp)</label>
+              <input
+                type="number"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder="0"
+                required
+                min="0"
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label>💵 Amount (Rp)</label>
-            <input
-              type="number"
-              name="amount"
-              value={formData.amount}
-              onChange={handleChange}
-              placeholder="0"
-              required
-              min="0"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>🔄 Type</label>
+            <label>Type</label>
             <div className="radio-group">
               <label className="radio-label">
-                <input
-                  type="radio"
-                  name="type"
-                  value="Debit"
-                  checked={formData.type === 'Debit'}
-                  onChange={handleChange}
-                />
+                <input type="radio" name="type" value="Debit" checked={formData.type === 'Debit'} onChange={handleChange} />
                 <span>Income (Debit)</span>
               </label>
               <label className="radio-label">
-                <input
-                  type="radio"
-                  name="type"
-                  value="Credit"
-                  checked={formData.type === 'Credit'}
-                  onChange={handleChange}
-                />
+                <input type="radio" name="type" value="Credit" checked={formData.type === 'Credit'} onChange={handleChange} />
                 <span>Expense (Credit)</span>
               </label>
             </div>
           </div>
 
           <div className="form-group">
-            <label>📝 Note</label>
-            <input
-              type="text"
-              name="note"
-              value={formData.note}
-              onChange={handleChange}
-              placeholder="Add a note..."
-            />
+            <label>Note</label>
+            <input type="text" name="note" value={formData.note} onChange={handleChange} placeholder="Add a note…" />
           </div>
 
-          <div className="modal-actions">
-            <button 
-              type="button" 
-              className="cancel-btn"
-              onClick={onClose}
-            >
+          <div className="edit-actions">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button 
-              type="submit" 
-              className="save-btn"
-              disabled={loading}
-            >
-              {loading ? '⏳ Saving...' : '💾 Save Changes'}
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? <span className="spinner" /> : 'Save Changes'}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
