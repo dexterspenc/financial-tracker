@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, subMonths } from 'date-fns';
 import { APPS_SCRIPT_URL, ACCOUNTS } from '../config';
-import { DonutChart, AreaChart, BarList } from '@tremor/react';
+import { DonutChart, AreaChart } from '@tremor/react';
 import AnalyticsTabs from '../components/AnalyticsTabs.jsx';
 import AIAdvisor from '../components/AIAdvisor.jsx';
 import { toast } from '../components/ui/Toast';
@@ -1239,22 +1239,21 @@ function AnalyticsPage() {
     });
   };
 
-  // Tremor DonutChart data
+  // Tremor DonutChart data — hex colors bypass Tailwind class dependency
+  const DONUT_COLORS = [
+    '#3b82f6', '#8b5cf6', '#6366f1', '#06b6d4', '#10b981',
+    '#f43f5e', '#f59e0b', '#14b8a6', '#a855f7', '#ec4899',
+  ];
+
   const donutData = Object.entries(analytics.expenseByCategory)
     .sort((a, b) => b[1] - a[1])
     .map(([name, value]) => ({ name, value }));
 
-  // Tremor AreaChart data
+  // Tremor AreaChart data — hex colors bypass Tailwind class dependency
   const areaData = trends.months.map((month, i) => ({
     month,
     Income: trends.incomeData[i] || 0,
     Expense: trends.expenseData[i] || 0,
-  }));
-
-  // Tremor BarList data for top expenses
-  const barListData = analytics.topExpenses.map(exp => ({
-    name: exp.note ? `${exp.category} · ${exp.note}` : exp.category,
-    value: exp.amount,
   }));
 
   const monthOptions = [];
@@ -1337,7 +1336,7 @@ function AnalyticsPage() {
                       category="value"
                       index="name"
                       valueFormatter={(v) => `Rp ${v.toLocaleString('id-ID')}`}
-                      colors={['blue', 'violet', 'indigo', 'cyan', 'emerald', 'rose', 'amber', 'teal', 'purple', 'pink']}
+                      colors={DONUT_COLORS}
                       className="tremor-donut"
                     />
                     <div className="category-list">
@@ -1425,13 +1424,26 @@ function AnalyticsPage() {
 
               <div className="top-expenses-card">
                 <h2>Top Expenses</h2>
-                {barListData.length > 0 ? (
-                  <BarList
-                    data={barListData}
-                    valueFormatter={(v) => `Rp ${v.toLocaleString('id-ID')}`}
-                    color="blue"
-                    className="tremor-barlist"
-                  />
+                {analytics.topExpenses.length > 0 ? (
+                  <div className="top-expenses-list">
+                    {analytics.topExpenses.slice(0, 5).map((exp, idx) => {
+                      const maxAmount = analytics.topExpenses[0].amount;
+                      const barWidth = ((exp.amount / maxAmount) * 100).toFixed(1);
+                      return (
+                        <div key={idx} className="top-expense-item">
+                          <div className="top-expense-bar" style={{ width: `${barWidth}%` }} />
+                          <div className="top-expense-content">
+                            <span className="top-expense-label">
+                              {exp.category}{exp.note ? ` · ${exp.note}` : ''}
+                            </span>
+                            <span className="top-expense-amount">
+                              Rp {exp.amount.toLocaleString('id-ID')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="no-data">No expense data for this month</div>
                 )}
@@ -1613,7 +1625,7 @@ function AnalyticsPage() {
                   data={areaData}
                   index="month"
                   categories={['Income', 'Expense']}
-                  colors={['emerald', 'rose']}
+                  colors={['#10b981', '#ef4444']}
                   valueFormatter={(v) => `Rp ${(v / 1000000).toFixed(1)}M`}
                   showLegend
                   showGridLines={false}

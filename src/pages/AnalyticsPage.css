@@ -1428,9 +1428,55 @@
   height: 240px;
 }
 
-/* BarList */
-.tremor-barlist {
+/* ─── Top Expenses custom list ───────────────────────────── */
+.top-expenses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 4px;
+}
+
+.top-expense-item {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-default);
+}
+
+.top-expense-bar {
+  position: absolute;
+  inset: 0;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: var(--radius-md);
+  transition: width 0.4s ease;
+}
+
+.top-expense-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.top-expense-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.top-expense-amount {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Tremor base resets to match our font */
