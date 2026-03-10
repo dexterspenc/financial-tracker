@@ -152,8 +152,8 @@
 
 .category-item {
   display: grid;
-  grid-template-columns: 1fr auto 60px;
-  gap: 15px;
+  grid-template-columns: auto 1fr auto 60px;
+  gap: 10px;
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid #f7fafc;
@@ -1417,15 +1417,27 @@
    TREMOR CHART OVERRIDES
    ────────────────────────────────────────────────────────── */
 
-/* DonutChart */
-.tremor-donut {
+/* ─── Chart.js wrappers ──────────────────────────────────── */
+.donut-chart-wrapper {
   height: 220px;
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* AreaChart */
-.tremor-area {
-  height: 240px;
+.line-chart-wrapper {
+  height: 260px;
+  position: relative;
+}
+
+/* ─── Category dot (matches donut slice color) ───────────── */
+.category-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 4px;
 }
 
 /* ─── Top Expenses custom list ───────────────────────────── */

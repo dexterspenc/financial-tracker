@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { format, subMonths } from 'date-fns';
 import { APPS_SCRIPT_URL, ACCOUNTS } from '../config';
-import { DonutChart, AreaChart } from '@tremor/react';
+import { Doughnut, Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement, Tooltip, Legend,
+  CategoryScale, LinearScale, PointElement, LineElement, Filler,
+} from 'chart.js';
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 import AnalyticsTabs from '../components/AnalyticsTabs.jsx';
 import AIAdvisor from '../components/AIAdvisor.jsx';
 import { toast } from '../components/ui/Toast';
@@ -1239,22 +1245,84 @@ function AnalyticsPage() {
     });
   };
 
-  // Tremor DonutChart data — hex colors bypass Tailwind class dependency
   const DONUT_COLORS = [
     '#3b82f6', '#8b5cf6', '#6366f1', '#06b6d4', '#10b981',
     '#f43f5e', '#f59e0b', '#14b8a6', '#a855f7', '#ec4899',
   ];
 
-  const donutData = Object.entries(analytics.expenseByCategory)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, value]) => ({ name, value }));
+  const donutEntries = Object.entries(analytics.expenseByCategory)
+    .sort((a, b) => b[1] - a[1]);
 
-  // Tremor AreaChart data — hex colors bypass Tailwind class dependency
-  const areaData = trends.months.map((month, i) => ({
-    month,
-    Income: trends.incomeData[i] || 0,
-    Expense: trends.expenseData[i] || 0,
-  }));
+  const donutChartData = {
+    labels: donutEntries.map(([name]) => name),
+    datasets: [{
+      data: donutEntries.map(([, value]) => value),
+      backgroundColor: DONUT_COLORS.slice(0, donutEntries.length),
+      borderWidth: 2,
+      borderColor: '#fff',
+    }],
+  };
+
+  const donutOptions = {
+    cutout: '65%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ` Rp ${ctx.parsed.toLocaleString('id-ID')}`,
+        },
+      },
+    },
+  };
+
+  const lineChartData = {
+    labels: trends.months,
+    datasets: [
+      {
+        label: 'Income',
+        data: trends.incomeData,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16,185,129,0.12)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#10b981',
+      },
+      {
+        label: 'Expense',
+        data: trends.expenseData,
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239,68,68,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#ef4444',
+      },
+    ],
+  };
+
+  const lineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { font: { family: 'Inter' }, boxWidth: 12, padding: 16 } },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ` ${ctx.dataset.label}: Rp ${(ctx.parsed.y / 1000000).toFixed(1)}M`,
+        },
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
+      y: {
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: {
+          font: { family: 'Inter', size: 11 },
+          callback: (v) => `${(v / 1000000).toFixed(0)}M`,
+        },
+      },
+    },
+  };
 
   const monthOptions = [];
   for (let i = 0; i < 12; i++) {
@@ -1329,21 +1397,17 @@ function AnalyticsPage() {
 
               <div className="breakdown-card">
                 <h2>Expense Breakdown</h2>
-                {donutData.length > 0 ? (
+                {donutEntries.length > 0 ? (
                   <>
-                    <DonutChart
-                      data={donutData}
-                      category="value"
-                      index="name"
-                      valueFormatter={(v) => `Rp ${v.toLocaleString('id-ID')}`}
-                      colors={DONUT_COLORS}
-                      className="tremor-donut"
-                    />
+                    <div className="donut-chart-wrapper">
+                      <Doughnut data={donutChartData} options={donutOptions} />
+                    </div>
                     <div className="category-list">
-                      {donutData.map(({ name, value }) => {
+                      {donutEntries.map(([name, value], i) => {
                         const percentage = (value / analytics.monthExpense * 100).toFixed(1);
                         return (
                           <div key={name} className="category-item">
+                            <div className="category-dot" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
                             <div className="category-info">
                               <div className="category-name">{name}</div>
                               <div className="category-amount">Rp {value.toLocaleString('id-ID')}</div>
@@ -1429,6 +1493,9 @@ function AnalyticsPage() {
                     {analytics.topExpenses.slice(0, 5).map((exp, idx) => {
                       const maxAmount = analytics.topExpenses[0].amount;
                       const barWidth = ((exp.amount / maxAmount) * 100).toFixed(1);
+                      const pct = analytics.monthExpense > 0
+                        ? ((exp.amount / analytics.monthExpense) * 100).toFixed(0)
+                        : 0;
                       return (
                         <div key={idx} className="top-expense-item">
                           <div className="top-expense-bar" style={{ width: `${barWidth}%` }} />
@@ -1437,7 +1504,7 @@ function AnalyticsPage() {
                               {exp.category}{exp.note ? ` · ${exp.note}` : ''}
                             </span>
                             <span className="top-expense-amount">
-                              Rp {exp.amount.toLocaleString('id-ID')}
+                              Rp {exp.amount.toLocaleString('id-ID')} · {pct}%
                             </span>
                           </div>
                         </div>
@@ -1621,16 +1688,9 @@ function AnalyticsPage() {
             <>
               <div className="trend-card">
                 <h2>6-Month Trend</h2>
-                <AreaChart
-                  data={areaData}
-                  index="month"
-                  categories={['Income', 'Expense']}
-                  colors={['#10b981', '#ef4444']}
-                  valueFormatter={(v) => `Rp ${(v / 1000000).toFixed(1)}M`}
-                  showLegend
-                  showGridLines={false}
-                  className="tremor-area"
-                />
+                <div className="line-chart-wrapper">
+                  <Line data={lineChartData} options={lineOptions} />
+                </div>
               </div>
 
               <div className="weekly-card">
