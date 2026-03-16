@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { APPS_SCRIPT_URL } from '../config';
 import { format } from 'date-fns';
-import { Search, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useTransactions } from '../hooks/useTransactions';
 import EditModal from '../components/EditModal';
 import { ConfirmDialog } from '../components/ui/Dialog';
 import { toast } from '../components/ui/Toast';
 import './HistoryPage.css';
 
 function HistoryPage() {
+  const { user } = useAuth();
+  const { fetchTransactions, deleteTransaction } = useTransactions();
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,54 +22,28 @@ function HistoryPage() {
   });
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [displayCount, setDisplayCount] = useState(20);
-
-  // Delete confirm state
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => { fetchTransactions(); }, []);
+  useEffect(() => { if (user) loadTransactions(); }, [user]);
   useEffect(() => { applyFilters(); }, [transactions, filters]);
 
-  const fetchTransactions = async () => {
+  const loadTransactions = async () => {
     setLoading(true);
-    try {
-      const response = await fetch(APPS_SCRIPT_URL);
-      const data = await response.json();
-      const rows = data.values || [];
-
-      if (rows.length > 1) {
-        const txns = rows.slice(1).map((row, idx) => ({
-          rowIndex: idx + 2,
-          id: row[0],
-          date: row[1],
-          month: row[2],
-          account: row[3],
-          accountPurpose: row[4],
-          category: row[5],
-          flowType: row[6],
-          debit: parseFloat(row[7]) || 0,
-          credit: parseFloat(row[8]) || 0,
-          type: row[9],
-          transferPairId: row[10],
-          note: row[11]
-        })).reverse();
-
-        setTransactions(txns);
-      }
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setLoading(false);
+    const { data, error } = await fetchTransactions(user.id);
+    if (error) {
+      toast.error('Gagal memuat transaksi');
+    } else {
+      setTransactions(data);
     }
+    setLoading(false);
   };
 
   const applyFilters = () => {
     let filtered = [...transactions];
 
     if (filters.month !== 'all') {
-      filtered = filtered.filter(txn =>
-        txn.month && txn.month.toString().startsWith(filters.month)
-      );
+      filtered = filtered.filter(txn => txn.month?.substring(0, 7) === filters.month);
     }
     if (filters.account !== 'all') {
       filtered = filtered.filter(txn => txn.account === filters.account);
@@ -90,31 +67,20 @@ function HistoryPage() {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    try {
-      const response = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'delete', rowIndex: deleteTarget.rowIndex })
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        setDeleteTarget(null);
-        await fetchTransactions();
-        toast.success('Transaction deleted successfully');
-      } else {
-        throw new Error(result.error || 'Delete failed');
-      }
-    } catch (error) {
-      console.error('Error deleting:', error);
-      toast.error(`Failed to delete: ${error.message}`);
-    } finally {
-      setDeleteLoading(false);
+    const { error } = await deleteTransaction(deleteTarget.id);
+    if (error) {
+      toast.error(`Gagal hapus: ${error.message}`);
+    } else {
+      setDeleteTarget(null);
+      await loadTransactions();
+      toast.success('Transaksi berhasil dihapus');
     }
+    setDeleteLoading(false);
   };
 
   const handleEditSuccess = async () => {
-    await fetchTransactions();
-    toast.success('Transaction updated successfully');
+    await loadTransactions();
+    toast.success('Transaksi berhasil diperbarui');
   };
 
   const loadMore = () => setDisplayCount(prev => prev + 20);
@@ -126,19 +92,17 @@ function HistoryPage() {
     return groups;
   }, {});
 
-  const uniqueMonths = [...new Set(transactions.map(t => t.month?.toString().substring(0, 7)))].filter(Boolean).sort().reverse();
+  const uniqueMonths = [...new Set(transactions.map(t => t.month?.substring(0, 7)))].filter(Boolean).sort().reverse();
   const uniqueAccounts = [...new Set(transactions.map(t => t.account))].filter(Boolean).sort();
   const uniqueCategories = [...new Set(transactions.map(t => t.category))].filter(Boolean).sort();
 
   return (
     <div className="history-page">
-      {/* Header */}
       <div className="history-header">
         <h1>History</h1>
         <span className="history-count">{filteredTransactions.length} transactions</span>
       </div>
 
-      {/* Filters */}
       <div className="filters">
         <select
           value={filters.month}
@@ -207,8 +171,8 @@ function HistoryPage() {
                         </div>
                         {txn.note && <div className="card-note">{txn.note}</div>}
                       </div>
-                      <div className={`card-amount ${txn.credit ? 'expense' : 'income'}`}>
-                        {txn.credit ? '-' : '+'} Rp {(txn.debit || txn.credit).toLocaleString('id-ID')}
+                      <div className={`card-amount ${txn.credit > 0 ? 'expense' : 'income'}`}>
+                        {txn.credit > 0 ? '-' : '+'} Rp {(txn.debit || txn.credit).toLocaleString('id-ID')}
                       </div>
                     </div>
                     <div className="card-actions">
@@ -247,7 +211,6 @@ function HistoryPage() {
         </>
       )}
 
-      {/* Edit modal */}
       {editingTransaction && (
         <EditModal
           transaction={editingTransaction}
@@ -256,7 +219,6 @@ function HistoryPage() {
         />
       )}
 
-      {/* Delete confirm dialog */}
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}

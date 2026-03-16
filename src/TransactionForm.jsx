@@ -1,245 +1,208 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ArrowDown } from 'lucide-react';
-import { APPS_SCRIPT_URL, ACCOUNTS, CATEGORIES } from './config';
+import { useAuth } from './contexts/AuthContext';
+import { useTransactions } from './hooks/useTransactions';
+import { useAccounts } from './hooks/useAccounts';
+import { useCategories } from './hooks/useCategories';
 import { toast } from './components/ui/Toast';
 
-function TransactionForm() {
-  const [mode, setMode] = useState('normal'); // 'normal' or 'transfer'
-  const [formData, setFormData] = useState({
-    date: format(new Date(), 'yyyy-MM-dd'),
-    account: '',
-    category: '',
-    amount: '',
-    type: 'Credit',
-    note: '',
-    // Transfer mode fields
-    fromAccount: '',
-    toAccount: ''
-  });
-  
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [lastTransactionId, setLastTransactionId] = useState('');
-  const [lastTransferPairId, setLastTransferPairId] = useState('');
-
-  useEffect(() => {
-    fetchLastTransactionId();
-  }, []);
-
-  const fetchLastTransactionId = async () => {
-  try {
-    const response = await fetch(APPS_SCRIPT_URL);
-    const data = await response.json();
-    const rows = data.values || [];
-    
-    if (rows.length > 1) {
-      // Find actual last row (skip header)
-      const lastRow = rows[rows.length - 1];
-      const lastId = lastRow[0]; // Column A
-      const lastTransferPair = lastRow[10]; // Column K
-      
-      console.log('Last Transaction ID from sheet:', lastId);
-      console.log('Last Transfer Pair ID from sheet:', lastTransferPair);
-      
-      setLastTransactionId(lastId);
-      
-      if (lastTransferPair && lastTransferPair.startsWith('TRF-')) {
-        setLastTransferPairId(lastTransferPair);
-      } else {
-        // Scan all rows for highest TRF-XXX
-        let highestTrfNum = 0;
-        for (let i = 1; i < rows.length; i++) {
-          const trfId = rows[i][10]; // Column K
-          if (trfId && trfId.startsWith('TRF-')) {
-            const num = parseInt(trfId.split('-')[1]);
-            if (num > highestTrfNum) {
-              highestTrfNum = num;
-            }
-          }
-        }
-        if (highestTrfNum > 0) {
-          setLastTransferPairId(`TRF-${highestTrfNum.toString().padStart(3, '0')}`);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching last ID:', error);
-  }
+const EMPTY_FORM = {
+  date: format(new Date(), 'yyyy-MM-dd'),
+  accountId: '',
+  categoryId: '',
+  amount: '',
+  flowType: 'Expense', // 'Income' | 'Expense'
+  note: '',
+  fromAccountId: '',
+  toAccountId: '',
 };
 
-  const generateNextId = () => {
-    const today = new Date();
-    const yearMonth = format(today, 'yyyyMM');
-    
-    if (lastTransactionId && lastTransactionId.startsWith(yearMonth)) {
-      const lastNumber = parseInt(lastTransactionId.split('-')[1]);
-      const nextNumber = (lastNumber + 1).toString().padStart(3, '0');
-      return `${yearMonth}-${nextNumber}`;
-    } else {
-      return `${yearMonth}-001`;
-    }
+function TransactionForm() {
+  const { user } = useAuth();
+  const { addTransaction, addTransactionPair } = useTransactions();
+  const { fetchAccounts } = useAccounts();
+  const { fetchCategories } = useCategories();
+
+  const [mode, setMode] = useState('normal');
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [accounts, setAccounts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) loadFormData();
+  }, [user]);
+
+  const loadFormData = async () => {
+    setDataLoading(true);
+    const [{ data: accs }, { data: cats }] = await Promise.all([
+      fetchAccounts(user.id),
+      fetchCategories(user.id),
+    ]);
+    setAccounts(accs);
+    setCategories(cats);
+    setDataLoading(false);
   };
 
-  const generateNextTransferId = () => {
-    if (lastTransferPairId && lastTransferPairId.startsWith('TRF-')) {
-      const lastNumber = parseInt(lastTransferPairId.split('-')[1]);
-      const nextNumber = (lastNumber + 1).toString().padStart(3, '0');
-      return `TRF-${nextNumber}`;
-    } else {
-      return 'TRF-001';
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+      // Auto-set flowType when a category is selected
+      if (name === 'categoryId') {
+        const cat = categories.find(c => c.id === value);
+        if (cat && cat.flow_type !== 'Transfer') {
+          updated.flowType = cat.flow_type;
+        }
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage({ type: '', text: '' });
-
     try {
       if (mode === 'normal') {
-        await submitNormalTransaction();
+        await submitNormal();
       } else {
-        await submitTransferTransaction();
+        await submitTransfer();
       }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to add transaction');
-      setMessage({ type: '', text: '' });
+    } catch (err) {
+      toast.error('Gagal menambah transaksi');
     } finally {
       setLoading(false);
     }
   };
 
-  const submitNormalTransaction = async () => {
-    const transactionId = generateNextId();
-    const month = format(new Date(formData.date), 'yyyy-MM-01');
-    
-    const rowData = [
-      transactionId,
-      formData.date,
+  const submitNormal = async () => {
+    const month = format(new Date(formData.date + 'T00:00:00'), 'yyyy-MM-01');
+    const amount = parseFloat(formData.amount) || 0;
+    const selectedCategory = categories.find(c => c.id === formData.categoryId);
+    const flowType = selectedCategory?.flow_type ?? formData.flowType;
+
+    const payload = {
+      user_id: user.id,
+      date: formData.date,
       month,
-      formData.account,
-      '', // Account_Purpose (formula)
-      formData.category,
-      '', // Flow_Type (formula)
-      formData.type === 'Debit' ? formData.amount : '',
-      formData.type === 'Credit' ? formData.amount : '',
-      'Normal',
-      '',
-      formData.note
-    ];
+      account_id: formData.accountId,
+      category_id: formData.categoryId,
+      flow_type: flowType,
+      debit: flowType === 'Income' ? amount : 0,
+      credit: flowType !== 'Income' ? amount : 0,
+      type: 'Normal',
+      note: formData.note || null,
+    };
 
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ values: [rowData] })
-    });
+    const { error } = await addTransaction(payload);
+    if (error) throw error;
 
-    toast.success(`Transaction ${transactionId} added!`);
-    setMessage({ type: '', text: '' });
-    
-    setLastTransactionId(transactionId);
-    resetForm();
+    toast.success('Transaksi berhasil ditambahkan!');
+    setFormData({ ...EMPTY_FORM, date: formData.date });
   };
 
-  const submitTransferTransaction = async () => {
-    const transferPairId = generateNextTransferId();
-    const month = format(new Date(formData.date), 'yyyy-MM-01');
-    
-    // Transaction 1: Credit from source account
-    const transactionId1 = generateNextId();
-    const rowData1 = [
-      transactionId1,
-      formData.date,
+  const submitTransfer = async () => {
+    const month = format(new Date(formData.date + 'T00:00:00'), 'yyyy-MM-01');
+    const amount = parseFloat(formData.amount) || 0;
+    // Find the Transfer category (or the first transfer-type category)
+    const transferCategory = categories.find(c => c.flow_type === 'Transfer' && c.name === 'Transfer')
+      ?? categories.find(c => c.flow_type === 'Transfer');
+
+    if (!transferCategory) {
+      toast.error('Kategori Transfer tidak ditemukan. Pastikan data sudah ter-seed.');
+      return;
+    }
+
+    // Row 1: Credit (money leaves source account)
+    const debitRow = {
+      user_id: user.id,
+      date: formData.date,
       month,
-      formData.fromAccount,
-      '', // Account_Purpose (formula)
-      'Transfer',
-      '', // Flow_Type (formula)
-      '', // Debit
-      formData.amount, // Credit (keluar)
-      'Transfer',
-      transferPairId,
-      formData.note
-    ];
+      account_id: formData.fromAccountId,
+      category_id: transferCategory.id,
+      flow_type: 'Transfer',
+      debit: 0,
+      credit: amount,
+      type: 'Transfer',
+      note: formData.note || null,
+    };
 
-    // Transaction 2: Debit to destination account
-    const id1Number = parseInt(transactionId1.split('-')[1]);
-    const transactionId2 = `${transactionId1.split('-')[0]}-${(id1Number + 1).toString().padStart(3, '0')}`;
-    
-    const rowData2 = [
-      transactionId2,
-      formData.date,
+    // Row 2: Debit (money arrives at destination account)
+    const creditRow = {
+      user_id: user.id,
+      date: formData.date,
       month,
-      formData.toAccount,
-      '', // Account_Purpose (formula)
-      'Transfer',
-      '', // Flow_Type (formula)
-      formData.amount, // Debit (masuk)
-      '', // Credit
-      'Transfer',
-      transferPairId,
-      formData.note
-    ];
+      account_id: formData.toAccountId,
+      category_id: transferCategory.id,
+      flow_type: 'Transfer',
+      debit: amount,
+      credit: 0,
+      type: 'Transfer',
+      note: formData.note || null,
+    };
 
-    // Send both transactions
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ values: [rowData1] })
-    });
+    // Single atomic insert — both rows or neither
+    const { data, error } = await addTransactionPair([debitRow, creditRow]);
+    if (error) throw error;
 
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ values: [rowData2] })
-    });
+    // Link the pair using the IDs assigned by DB (update transfer_pair_id)
+    if (data && data.length === 2) {
+      const pairId = `TRF-${data[0].id.slice(0, 6).toUpperCase()}`;
+      await Promise.all(
+        data.map(t =>
+          import('./lib/supabase').then(({ supabase }) =>
+            supabase.from('transactions').update({ transfer_pair_id: pairId }).eq('id', t.id)
+          )
+        )
+      );
+    }
 
-    toast.success(`Transfer ${transferPairId} created!`);
-    setMessage({ type: '', text: '' });
-    
-    setLastTransactionId(transactionId2);
-    setLastTransferPairId(transferPairId);
-    resetForm();
+    toast.success('Transfer berhasil dibuat!');
+    setFormData({ ...EMPTY_FORM, date: formData.date });
   };
 
-  const resetForm = () => {
-    setFormData({
-      date: format(new Date(), 'yyyy-MM-dd'),
-      account: '',
-      category: '',
-      amount: '',
-      type: 'Credit',
-      note: '',
-      fromAccount: '',
-      toAccount: ''
-    });
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-  };
+  // Group accounts by purpose for <optgroup> rendering
+  const accountsByPurpose = accounts.reduce((groups, acc) => {
+    if (!groups[acc.purpose]) groups[acc.purpose] = [];
+    groups[acc.purpose].push(acc);
+    return groups;
+  }, {});
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  // Filter categories for normal mode: Income or Expense (not Transfer)
+  const incomeCategories = categories.filter(c => c.flow_type === 'Income');
+  const expenseCategories = categories.filter(c => c.flow_type === 'Expense');
 
   const quickButtons = [
-    { label: '🍽️ Lunch', category: 'Daily Needs', account: 'BCA', type: 'Credit' },
-    { label: '❤️ Dating', category: 'Dating', account: 'BCA', type: 'Credit' },
-    { label: '🚗 Transport', category: 'Transport', account: 'Cash', type: 'Credit' },
-    { label: '🛒 Shopping', category: 'Shopping', account: 'BCA', type: 'Credit' }
+    { label: '🍽️ Lunch',    categoryName: 'Daily Needs', accountName: 'BCA',  flowType: 'Expense' },
+    { label: '❤️ Dating',   categoryName: 'Dating',      accountName: 'BCA',  flowType: 'Expense' },
+    { label: '🚗 Transport', categoryName: 'Transport',   accountName: 'Cash', flowType: 'Expense' },
+    { label: '🛒 Shopping',  categoryName: 'Shopping',    accountName: 'BCA',  flowType: 'Expense' },
   ];
 
   const applyQuickButton = (preset) => {
+    const matchedAccount  = accounts.find(a => a.name === preset.accountName);
+    const matchedCategory = categories.find(c => c.name === preset.categoryName);
     setMode('normal');
-    setFormData({
-      ...formData,
-      category: preset.category,
-      account: preset.account,
-      type: preset.type
-    });
+    setFormData(prev => ({
+      ...prev,
+      accountId:  matchedAccount?.id  ?? '',
+      categoryId: matchedCategory?.id ?? '',
+      flowType:   preset.flowType,
+    }));
   };
 
-  const allAccounts = Object.values(ACCOUNTS).flat();
+  if (dataLoading) {
+    return (
+      <div className="transaction-form">
+        <div className="loading-state">
+          <div className="loading-spinner" />
+          <span>Memuat data akun dan kategori…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="transaction-form">
@@ -248,7 +211,6 @@ function TransactionForm() {
         <p className="subtitle">Quick & Easy Financial Tracking</p>
       </div>
 
-      {/* Mode Toggle */}
       <div className="mode-toggle">
         <button
           type="button"
@@ -266,12 +228,6 @@ function TransactionForm() {
         </button>
       </div>
 
-      {message.text && (
-        <div className={`message ${message.type}`}>
-          {message.text}
-        </div>
-      )}
-
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>📅 Date</label>
@@ -286,20 +242,14 @@ function TransactionForm() {
 
         {mode === 'normal' ? (
           <>
-            {/* Normal Mode Fields */}
             <div className="form-group">
               <label>🏦 Account</label>
-              <select
-                name="account"
-                value={formData.account}
-                onChange={handleChange}
-                required
-              >
+              <select name="accountId" value={formData.accountId} onChange={handleChange} required>
                 <option value="">Select Account</option>
-                {Object.entries(ACCOUNTS).map(([purpose, accounts]) => (
+                {Object.entries(accountsByPurpose).map(([purpose, accs]) => (
                   <optgroup key={purpose} label={purpose}>
-                    {accounts.map(acc => (
-                      <option key={acc} value={acc}>{acc}</option>
+                    {accs.map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name}</option>
                     ))}
                   </optgroup>
                 ))}
@@ -307,21 +257,48 @@ function TransactionForm() {
             </div>
 
             <div className="form-group">
+              <label>🔄 Type</label>
+              <div className="radio-group">
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="flowType"
+                    value="Income"
+                    checked={formData.flowType === 'Income'}
+                    onChange={handleChange}
+                  />
+                  <span>Income</span>
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="flowType"
+                    value="Expense"
+                    checked={formData.flowType === 'Expense'}
+                    onChange={handleChange}
+                  />
+                  <span>Expense</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="form-group">
               <label>📂 Category</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              >
+              <select name="categoryId" value={formData.categoryId} onChange={handleChange} required>
                 <option value="">Select Category</option>
-                {Object.entries(CATEGORIES).map(([type, categories]) => (
-                  <optgroup key={type} label={type}>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                {formData.flowType === 'Income' ? (
+                  <optgroup label="Income">
+                    {incomeCategories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </optgroup>
-                ))}
+                ) : (
+                  <optgroup label="Expense">
+                    {expenseCategories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 
@@ -337,47 +314,15 @@ function TransactionForm() {
                 min="0"
               />
             </div>
-
-            <div className="form-group">
-              <label>🔄 Type</label>
-              <div className="radio-group">
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="type"
-                    value="Debit"
-                    checked={formData.type === 'Debit'}
-                    onChange={handleChange}
-                  />
-                  <span>Income (Credit)</span>
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="type"
-                    value="Credit"
-                    checked={formData.type === 'Credit'}
-                    onChange={handleChange}
-                  />
-                  <span>Expense (Debit)</span>
-                </label>
-              </div>
-            </div>
           </>
         ) : (
           <>
-            {/* Transfer Mode Fields */}
             <div className="form-group">
               <label>📤 From Account</label>
-              <select
-                name="fromAccount"
-                value={formData.fromAccount}
-                onChange={handleChange}
-                required
-              >
+              <select name="fromAccountId" value={formData.fromAccountId} onChange={handleChange} required>
                 <option value="">Select Source Account</option>
-                {allAccounts.map(acc => (
-                  <option key={acc} value={acc}>{acc}</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
                 ))}
               </select>
             </div>
@@ -386,15 +331,10 @@ function TransactionForm() {
 
             <div className="form-group">
               <label>📥 To Account</label>
-              <select
-                name="toAccount"
-                value={formData.toAccount}
-                onChange={handleChange}
-                required
-              >
+              <select name="toAccountId" value={formData.toAccountId} onChange={handleChange} required>
                 <option value="">Select Destination Account</option>
-                {allAccounts.map(acc => (
-                  <option key={acc} value={acc}>{acc}</option>
+                {accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
                 ))}
               </select>
             </div>
@@ -443,22 +383,14 @@ function TransactionForm() {
           </div>
         )}
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="submit-btn"
           disabled={loading}
         >
-          {loading ? '⏳ Adding...' : mode === 'transfer' ? '🔄 Create Transfer' : '✨ Add Transaction'}
+          {loading ? '⏳ Menyimpan...' : mode === 'transfer' ? '🔄 Create Transfer' : '✨ Add Transaction'}
         </button>
       </form>
-
-      <div className="next-id">
-        {mode === 'normal' ? (
-          <>Next ID: <strong>{generateNextId()}</strong></>
-        ) : (
-          <>Next Transfer: <strong>{generateNextTransferId()}</strong></>
-        )}
-      </div>
     </div>
   );
 }

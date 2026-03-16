@@ -1,12 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, Clock, BarChart2 } from 'lucide-react';
+import { Home, PlusCircle, Clock, BarChart2, Settings } from 'lucide-react';
 import './BottomNav.css';
 
 const NAV_ITEMS = [
-  { to: '/',          label: 'Home',     Icon: Home      },
-  { to: '/add',       label: 'Add',      Icon: PlusCircle },
-  { to: '/history',   label: 'History',  Icon: Clock     },
-  { to: '/analytics', label: 'Analytics',Icon: BarChart2 },
+  { to: '/',          label: 'Home',      Icon: Home      },
+  { to: '/add',       label: 'Tambah',    Icon: PlusCircle },
+  { to: '/history',   label: 'Riwayat',   Icon: Clock     },
+  { to: '/analytics', label: 'Analitik',  Icon: BarChart2 },
+  { to: '/settings',  label: 'Pengaturan',Icon: Settings   },
 ];
 
 function BottomNav() {

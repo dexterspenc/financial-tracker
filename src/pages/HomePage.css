@@ -261,6 +261,47 @@
   color: var(--text-muted);
 }
 
+/* ─── Accounts section ───────────────────────────────────── */
+.accounts-section {
+  margin-top: 20px;
+}
+
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.account-balance-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.account-balance-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-balance-purpose {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.account-balance-amount {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--brand-700);
+}
+
 /* ─── Legacy subtitle class (keep for AddPage) ───────────── */
 .subtitle {
   color: var(--text-muted);

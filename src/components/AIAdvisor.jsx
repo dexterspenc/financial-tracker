@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Bot, Send, Trash2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import './AIAdvisor.css';
 
 const QUICK_PROMPTS = [
@@ -60,52 +61,20 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
     setLoading(true);
 
     try {
-      const contextSummary = buildContext();
+      const context = buildContext();
 
-      // Inject financial context into the first user message of each conversation
-      const apiMessages = updatedMessages.map((msg, idx) => {
-        if (idx === 0) {
-          return {
-            role: 'user',
-            content: `Data keuangan saya:\n\`\`\`json\n${contextSummary}\n\`\`\`\n\nPertanyaan: ${msg.content}`,
-          };
-        }
-        return { role: msg.role, content: msg.content };
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: { messages: updatedMessages, context },
       });
 
-      const response = await fetch('/api/anthropic/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system:
-            'Kamu adalah financial advisor pribadi yang membantu menganalisis data keuangan pengguna. Data transaksi diberikan dalam format JSON. Jawab dalam Bahasa Indonesia, singkat dan actionable.',
-          messages: apiMessages,
-        }),
-      });
+      if (error) throw error;
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const aiText = data.content?.[0]?.text || '(Tidak ada respons)';
+      const aiText = data?.content?.[0]?.text || '(Tidak ada respons)';
       setMessages((prev) => [...prev, { role: 'assistant', content: aiText }]);
-    } catch (error) {
-      console.error('AI Advisor error:', error);
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
-        {
-          role: 'assistant',
-          content: `❌ Gagal mendapat respons: ${error.message}`,
-        },
+        { role: 'assistant', content: `❌ Gagal mendapat respons: ${err.message}` },
       ]);
     } finally {
       setLoading(false);

@@ -1,72 +1,97 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { APPS_SCRIPT_URL, ACCOUNTS, CATEGORIES } from '../config';
+import { useAuth } from '../contexts/AuthContext';
+import { useTransactions } from '../hooks/useTransactions';
+import { useAccounts } from '../hooks/useAccounts';
+import { useCategories } from '../hooks/useCategories';
 import { Dialog, DialogContent } from './ui/Dialog';
 import { toast } from './ui/Toast';
 import './EditModal.css';
 
 function EditModal({ transaction, onClose, onSuccess }) {
+  const { user } = useAuth();
+  const { updateTransaction } = useTransactions();
+  const { fetchAccounts } = useAccounts();
+  const { fetchCategories } = useCategories();
+
   const [formData, setFormData] = useState({
     date: '',
-    account: '',
-    category: '',
+    accountId: '',
+    categoryId: '',
     amount: '',
-    type: 'Credit',
-    note: ''
+    flowType: 'Expense',
+    note: '',
   });
+  const [accounts, setAccounts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    if (transaction) {
-      setFormData({
-        date: format(new Date(transaction.date), 'yyyy-MM-dd'),
-        account: transaction.account,
-        category: transaction.category,
-        amount: transaction.debit || transaction.credit || '',
-        type: transaction.debit ? 'Debit' : 'Credit',
-        note: transaction.note || ''
-      });
-    }
-  }, [transaction]);
+    if (user && transaction) loadFormData();
+  }, [user, transaction]);
+
+  const loadFormData = async () => {
+    setDataLoading(true);
+    const [{ data: accs }, { data: cats }] = await Promise.all([
+      fetchAccounts(user.id),
+      fetchCategories(user.id),
+    ]);
+    setAccounts(accs);
+    setCategories(cats);
+
+    const amount = transaction.debit > 0 ? transaction.debit : transaction.credit;
+    setFormData({
+      date: format(new Date(transaction.date + 'T00:00:00'), 'yyyy-MM-dd'),
+      accountId: transaction.accountId ?? '',
+      categoryId: transaction.categoryId ?? '',
+      amount: amount?.toString() ?? '',
+      flowType: transaction.flowType === 'Income' ? 'Income' : 'Expense',
+      note: transaction.note ?? '',
+    });
+    setDataLoading(false);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'categoryId') {
+        const cat = categories.find(c => c.id === value);
+        if (cat && cat.flow_type !== 'Transfer') {
+          updated.flowType = cat.flow_type;
+        }
+      }
+      return updated;
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const month = format(new Date(formData.date), 'yyyy-MM-01');
-      const rowData = [
-        transaction.id,
-        formData.date,
+      const month = format(new Date(formData.date + 'T00:00:00'), 'yyyy-MM-01');
+      const amount = parseFloat(formData.amount) || 0;
+      const selectedCategory = categories.find(c => c.id === formData.categoryId);
+      const flowType = selectedCategory?.flow_type ?? formData.flowType;
+
+      const payload = {
+        date: formData.date,
         month,
-        formData.account,
-        '',
-        formData.category,
-        '',
-        formData.type === 'Debit' ? formData.amount : '',
-        formData.type === 'Credit' ? formData.amount : '',
-        transaction.type,
-        transaction.transferPairId || '',
-        formData.note
-      ];
+        account_id: formData.accountId,
+        category_id: formData.categoryId,
+        flow_type: flowType,
+        debit: flowType === 'Income' ? amount : 0,
+        credit: flowType !== 'Income' ? amount : 0,
+        note: formData.note || null,
+      };
 
-      const response = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'update',
-          rowIndex: transaction.rowIndex,
-          values: [rowData]
-        })
-      });
+      const { error } = await updateTransaction(transaction.id, payload);
+      if (error) throw error;
 
-      const result = await response.json();
-
-      if (result.success) {
-        onSuccess();
-        onClose();
-      } else {
-        throw new Error(result.error || 'Update failed');
-      }
+      onSuccess();
+      onClose();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -74,88 +99,130 @@ function EditModal({ transaction, onClose, onSuccess }) {
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
   if (!transaction) return null;
+
+  const accountsByPurpose = accounts.reduce((groups, acc) => {
+    if (!groups[acc.purpose]) groups[acc.purpose] = [];
+    groups[acc.purpose].push(acc);
+    return groups;
+  }, {});
+
+  const incomeCategories = categories.filter(c => c.flow_type === 'Income');
+  const expenseCategories = categories.filter(c => c.flow_type === 'Expense');
+  const transferCategories = categories.filter(c => c.flow_type === 'Transfer');
 
   return (
     <Dialog open={!!transaction} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent title="Edit Transaction">
-        <form onSubmit={handleSubmit} className="edit-form">
-          <div className="edit-form-grid">
-            <div className="form-group">
-              <label>Date</label>
-              <input type="date" name="date" value={formData.date} onChange={handleChange} required />
-            </div>
+        {dataLoading ? (
+          <div className="loading-state">
+            <div className="loading-spinner" />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="edit-form">
+            <div className="edit-form-grid">
+              <div className="form-group">
+                <label>Date</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Account</label>
-              <select name="account" value={formData.account} onChange={handleChange} required>
-                <option value="">Select Account</option>
-                {Object.entries(ACCOUNTS).map(([purpose, accounts]) => (
-                  <optgroup key={purpose} label={purpose}>
-                    {accounts.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+              <div className="form-group">
+                <label>Account</label>
+                <select name="accountId" value={formData.accountId} onChange={handleChange} required>
+                  <option value="">Select Account</option>
+                  {Object.entries(accountsByPurpose).map(([purpose, accs]) => (
+                    <optgroup key={purpose} label={purpose}>
+                      {accs.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Category</label>
+                <select name="categoryId" value={formData.categoryId} onChange={handleChange} required>
+                  <option value="">Select Category</option>
+                  <optgroup label="Income">
+                    {incomeCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                   </optgroup>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Category</label>
-              <select name="category" value={formData.category} onChange={handleChange} required>
-                <option value="">Select Category</option>
-                {Object.entries(CATEGORIES).map(([type, categories]) => (
-                  <optgroup key={type} label={type}>
-                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  <optgroup label="Expense">
+                    {expenseCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                   </optgroup>
-                ))}
-              </select>
+                  {transferCategories.length > 0 && (
+                    <optgroup label="Transfer">
+                      {transferCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Amount (Rp)</label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  placeholder="0"
+                  required
+                  min="0"
+                />
+              </div>
             </div>
 
             <div className="form-group">
-              <label>Amount (Rp)</label>
+              <label>Type</label>
+              <div className="radio-group">
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="flowType"
+                    value="Income"
+                    checked={formData.flowType === 'Income'}
+                    onChange={handleChange}
+                  />
+                  <span>Income</span>
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="flowType"
+                    value="Expense"
+                    checked={formData.flowType === 'Expense'}
+                    onChange={handleChange}
+                  />
+                  <span>Expense</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Note</label>
               <input
-                type="number"
-                name="amount"
-                value={formData.amount}
+                type="text"
+                name="note"
+                value={formData.note}
                 onChange={handleChange}
-                placeholder="0"
-                required
-                min="0"
+                placeholder="Add a note…"
               />
             </div>
-          </div>
 
-          <div className="form-group">
-            <label>Type</label>
-            <div className="radio-group">
-              <label className="radio-label">
-                <input type="radio" name="type" value="Debit" checked={formData.type === 'Debit'} onChange={handleChange} />
-                <span>Income (Debit)</span>
-              </label>
-              <label className="radio-label">
-                <input type="radio" name="type" value="Credit" checked={formData.type === 'Credit'} onChange={handleChange} />
-                <span>Expense (Credit)</span>
-              </label>
+            <div className="edit-actions">
+              <button type="button" className="btn btn-secondary" onClick={onClose}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? <span className="spinner" /> : 'Save Changes'}
+              </button>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label>Note</label>
-            <input type="text" name="note" value={formData.note} onChange={handleChange} placeholder="Add a note…" />
-          </div>
-
-          <div className="edit-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="spinner" /> : 'Save Changes'}
-            </button>
-          </div>
-        </form>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
