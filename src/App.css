@@ -99,7 +99,7 @@
 .radio-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 12px;
 }
 
 .radio-label {
@@ -107,6 +107,7 @@
   align-items: center;
   gap: 8px;
   padding: 11px 14px;
+  min-height: 48px;
   border: 1.5px solid var(--border-default);
   border-radius: var(--radius-md);
   cursor: pointer;

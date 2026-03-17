@@ -33,8 +33,24 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // Restore session on mount — also check onboarding
+    // NOTE: JWT expiry is configured in Supabase Dashboard → Authentication → Settings → JWT expiry.
+    //   Default: 3600 s (1 hour). Recommended: 604800 (7 days) for balanced UX/security,
+    //   or 86400 (1 day) for stricter environments.
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
+        // If session exists but is already expired, force sign-out immediately
+        if (session && session.expires_at) {
+          const expiredAt = session.expires_at * 1000; // expires_at is in seconds
+          if (Date.now() > expiredAt) {
+            supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            setOnboardingCompleted(null);
+            return;
+          }
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);

@@ -93,7 +93,7 @@ function HomePage() {
             <div className="hero-amount">
               {hideBalance
                 ? 'Rp ••••••'
-                : `${stats.netCashflow >= 0 ? '+' : ''}Rp ${Math.abs(stats.netCashflow).toLocaleString('id-ID')}`}
+                : `${stats.netCashflow >= 0 ? '+' : '-'}Rp ${Math.abs(stats.netCashflow).toLocaleString('id-ID')}`}
             </div>
             <div className="hero-stats">
               <div className="hero-stat">
