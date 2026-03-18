@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../contexts/AuthContext';
 import { useTransactions } from '../hooks/useTransactions';
 import { supabase } from '../lib/supabase';
@@ -147,7 +148,11 @@ function AIAdvisorWidget() {
                 {msg.role === 'assistant' && (
                   <span className="widget-avatar-circle ai-avatar"><Bot size={13} /></span>
                 )}
-                <div className={`widget-bubble ${msg.role}`}>{msg.content}</div>
+                <div className={`widget-bubble ${msg.role}`}>
+                  {msg.role === 'assistant'
+                    ? <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    : msg.content}
+                </div>
                 {msg.role === 'user' && (
                   <span className="widget-avatar-circle user-avatar">👤</span>
                 )}

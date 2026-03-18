@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Bot, Send, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { supabase } from '../lib/supabase';
 import './AIAdvisor.css';
 
@@ -122,7 +123,11 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
               {msg.role === 'assistant' && (
                 <div className="chat-avatar-circle ai"><Bot size={14} /></div>
               )}
-              <div className={`chat-bubble ${msg.role}`}>{msg.content}</div>
+              <div className={`chat-bubble ${msg.role}`}>
+                {msg.role === 'assistant'
+                  ? <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  : msg.content}
+              </div>
               {msg.role === 'user' && (
                 <div className="chat-avatar-circle user">👤</div>
               )}

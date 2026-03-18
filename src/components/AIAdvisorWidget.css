@@ -430,3 +430,14 @@
   .widget-quick-prompts { flex-direction: column; }
   .widget-quick-btn { border-radius: var(--radius-md); }
 }
+
+/* ─── Markdown rendering in assistant bubbles ─────────────── */
+.widget-bubble.assistant p          { margin-bottom: 8px; }
+.widget-bubble.assistant p:last-child { margin-bottom: 0; }
+.widget-bubble.assistant h1         { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+.widget-bubble.assistant h2         { font-size: 1rem;   font-weight: 700; margin-bottom: 6px; }
+.widget-bubble.assistant h3         { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+.widget-bubble.assistant ul,
+.widget-bubble.assistant ol         { padding-left: 16px; margin-bottom: 8px; }
+.widget-bubble.assistant li         { margin-bottom: 2px; }
+.widget-bubble.assistant strong     { font-weight: 700; }

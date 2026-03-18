@@ -312,3 +312,14 @@
   .quick-prompts-grid { flex-direction: column; }
   .quick-prompt-btn { border-radius: var(--radius-md); }
 }
+
+/* ─── Markdown rendering in assistant bubbles ─────────────── */
+.chat-bubble.assistant p            { margin-bottom: 8px; }
+.chat-bubble.assistant p:last-child { margin-bottom: 0; }
+.chat-bubble.assistant h1           { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+.chat-bubble.assistant h2           { font-size: 1rem;   font-weight: 700; margin-bottom: 6px; }
+.chat-bubble.assistant h3           { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+.chat-bubble.assistant ul,
+.chat-bubble.assistant ol           { padding-left: 16px; margin-bottom: 8px; }
+.chat-bubble.assistant li           { margin-bottom: 2px; }
+.chat-bubble.assistant strong       { font-weight: 700; }
