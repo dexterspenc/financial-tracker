@@ -181,5 +181,37 @@ supabase/
   migrations/
     001_initial_schema.sql
     002_rls_policies.sql
-    003_seed_default_categories.sql
+    003_seed_default_data.sql
+    004_remove_auto_seed_trigger.sql
 ```
+
+---
+
+## Deployment
+
+| Version | Branch | Vercel Project | URL |
+|---|---|---|---|
+| Personal | `main` | `financial-tracker` | https://financial-tracker-self.vercel.app |
+| SaaS | `saas-rebuild` | `financial-tracker-saas` | https://financial-tracker-saas.vercel.app |
+
+- Setiap push ke `saas-rebuild` otomatis trigger re-deploy di Vercel.
+- Supabase project ref: `nhoicsupaccepvnwtqpv`
+
+---
+
+## Edge Function Status
+
+| Function | Status | Notes |
+|---|---|---|
+| `ai-chat` | ✅ Deployed | `ANTHROPIC_API_KEY` tersimpan di Supabase Edge Function Secrets |
+
+Semua Anthropic API calls diproxy melalui Edge Function — API key tidak pernah sampai ke client bundle.
+
+---
+
+## Future Considerations
+
+- **Pisahkan `purpose` dan `type` di tabel `accounts`** — saat ini `purpose` digunakan untuk Living/Playing/Saving/Investment sekaligus. Idealnya ada kolom terpisah: `purpose` (Living/Playing/Saving) dan `type` (Cash/Bank/Investment) untuk fleksibilitas analytics yang lebih baik.
+- **Admin dashboard** — monitoring users, usage, dan error rates. Berguna saat onboarding users baru.
+- **PWA setup** — manifest + service worker untuk offline support dan installable app di mobile. Belum dikerjakan.
+- **Data migration dari Google Sheets** — tooling untuk import histori transaksi existing user ke Supabase. Diperlukan jika personal version user ingin pindah ke SaaS version.

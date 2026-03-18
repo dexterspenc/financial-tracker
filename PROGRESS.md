@@ -1,6 +1,6 @@
 # PROGRESS.md — SaaS Rebuild Progress Log
 
-Last updated: 2026-03-15 (Session 6 — Auth polish + code hygiene)
+Last updated: 2026-03-16 (Session 7 — Deploy & documentation)
 
 ---
 
@@ -31,7 +31,8 @@ Last updated: 2026-03-15 (Session 6 — Auth polish + code hygiene)
 - ✅ `supabase/migrations/001_initial_schema.sql` — all 6 tables with indexes
 - ✅ `supabase/migrations/002_rls_policies.sql` — RLS on all tables (user_id isolation)
 - ✅ `supabase/migrations/003_seed_default_data.sql` — trigger seeds accounts + categories on new user signup
-- ⚠️ **ACTION REQUIRED**: Run migrations 001→002→003 in Supabase Dashboard → SQL Editor
+- ✅ `supabase/migrations/004_remove_auto_seed_trigger.sql` — drops old auto-seed trigger; adds `onboarding_completed` to `user_settings`
+- ✅ Migrations 001→002→003→004 applied in Supabase Dashboard → SQL Editor
 
 ### Auth
 - ✅ Supabase Auth — Email + Password (configured in `AuthContext`)
@@ -41,7 +42,7 @@ Last updated: 2026-03-15 (Session 6 — Auth polish + code hygiene)
 - ✅ `src/pages/LoginPage.jsx` + `LoginPage.css` — email/password form + Google OAuth button
 - ✅ `src/pages/RegisterPage.jsx` + `RegisterPage.css` — registration form (shares LoginPage.css)
 - ✅ `src/App.jsx` updated — AuthProvider wraps all routes, `/login` + `/register` added, existing routes protected
-- ⚠️ **ACTION REQUIRED (Google OAuth)**: Supabase Dashboard → Auth → Providers → Google → add Client ID + Secret
+- ✅ Google OAuth — configured in Supabase Dashboard → Auth → Providers → Google
 
 ### Technical decisions
 - ProtectedRoute uses React Router 7 `<Outlet />` pattern — BottomNav and AIAdvisorWidget moved into ProtectedRoute so they only render when authenticated
@@ -67,8 +68,8 @@ Last updated: 2026-03-15 (Session 6 — Auth polish + code hygiene)
 - ✅ `src/components/AIAdvisorWidget.jsx` — uses `supabase.functions.invoke('ai-chat', { body: { messages, context } })`
 - ✅ `.env` — `VITE_ANTHROPIC_API_KEY` removed
 - ✅ `.env.example` — `VITE_ANTHROPIC_API_KEY` removed; comment added explaining Edge Function secrets
-- ⚠️ **ACTION REQUIRED**: Supabase Dashboard → Edge Functions → Secrets → add `ANTHROPIC_API_KEY`
-- ⚠️ **ACTION REQUIRED**: Deploy Edge Function: `supabase functions deploy ai-chat`
+- ✅ `ANTHROPIC_API_KEY` added to Supabase Edge Function Secrets
+- ✅ Edge Function deployed: `supabase functions deploy ai-chat`
 
 ### P2 — Onboarding Wizard (COMPLETE)
 - ✅ `supabase/migrations/004_remove_auto_seed_trigger.sql` — drops old auto-seed trigger; adds `onboarding_completed` column to `user_settings`
@@ -76,7 +77,7 @@ Last updated: 2026-03-15 (Session 6 — Auth polish + code hygiene)
 - ✅ `src/components/ProtectedRoute.jsx` — two-layer guard: auth + onboarding; no chrome on `/onboarding`
 - ✅ `src/pages/OnboardingPage.jsx` — 4-step wizard: Pilih Akun → Pilih Kategori → Saldo Awal → Selesai; resume logic; custom account/category input
 - ✅ `src/pages/OnboardingPage.css` — wizard CSS
-- ⚠️ **ACTION REQUIRED**: Run migration 004 in Supabase Dashboard → SQL Editor
+- ✅ Migration 004 applied in Supabase Dashboard → SQL Editor
 
 ### P3 — Settings Page (COMPLETE)
 - ✅ `src/pages/SettingsPage.jsx` — 4 sections: Profil (display_name + logout), Kelola Akun (CRUD), Kelola Kategori (CRUD), Budget (per-category, `useBudgets`)
@@ -153,10 +154,33 @@ Last updated: 2026-03-15 (Session 6 — Auth polish + code hygiene)
 
 ---
 
+### P6 — Deploy (COMPLETE)
+- ✅ Branch `saas-rebuild` pushed to GitHub (`github.com/dexterspenc/financial-tracker`)
+- ✅ Deployed to Vercel — project `financial-tracker-saas` (production, branch `saas-rebuild`)
+- ✅ Vercel production URL: `financial-tracker-saas.vercel.app`
+
+---
+
+## Known Bugs / In Progress
+
+- ⚠️ **Net cashflow minus tidak tampil tanda minus** — `HomePage.jsx`: nilai cashflow negatif tidak diformat dengan tanda `-`; perlu cek logika display di summary cards
+- ⚠️ **UI polish masih diperlukan** — beberapa halaman (Onboarding, Settings) perlu review visual di mobile: spacing, font size, loading states
+
+---
+
+## Keputusan Teknis
+
+- **Budget di Supabase** — Budget tetap menggunakan tabel `budgets` di Supabase (bukan localStorage). Keputusan ini sudah diterapkan sejak P3; localStorage sepenuhnya dihapus.
+- **Onboarding wizard 4-step** — Menggantikan auto-seed trigger (migration 004). User memilih sendiri akun dan kategori yang relevan; data default di-seed hanya sebagai pilihan, bukan langsung dimasukkan. Resume onboarding dideteksi via logika cek data (cek `accounts` dan `onboarding_completed`), bukan kolom `step` terpisah.
+- **Investment sebagai purpose** — `Investment` tetap masuk sebagai nilai `purpose` di tabel `accounts` (sejajar dengan Living/Playing/Saving). Belum dipisah menjadi `type` tersendiri — dicatat sebagai future consideration karena butuh perubahan skema dan UI.
+- **ProtectedRoute pattern** — Menggunakan React Router 7 `<Outlet />` sehingga `BottomNav` dan `AIAdvisorWidget` hanya render saat user terautentikasi, tanpa conditional rendering di `App.jsx`.
+
+---
+
 ## Remaining Work
 
-### 🟢 Infrastructure
-1. **Run migration 004** in Supabase Dashboard → SQL Editor (if not yet applied)
-2. **Deploy Edge Function**: `supabase functions deploy ai-chat` + add `ANTHROPIC_API_KEY` secret (already done in Session 5)
-3. **PWA setup** (manifest, service worker, offline fallback)
-4. **Deploy to Vercel** + custom domain
+### 🟡 Nice to Have
+- **PWA setup** — manifest + service worker + offline fallback (belum dikerjakan)
+- **Custom domain** — belum dikonfigurasi di Vercel
+- **Data migration** — tools untuk import data dari Google Sheets ke Supabase (untuk existing user)
+- **Admin dashboard** — monitoring users dan usage (future)
