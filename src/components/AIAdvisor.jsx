@@ -63,7 +63,11 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
     try {
       const context = buildContext();
 
+      const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke('ai-chat', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: { messages: updatedMessages, context },
       });
 

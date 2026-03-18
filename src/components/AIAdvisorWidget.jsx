@@ -77,7 +77,11 @@ function AIAdvisorWidget() {
     try {
       const context = analyticsContext || '(Data belum tersedia)';
 
+      const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke('ai-chat', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: { messages: updatedMessages, context },
       });
 
