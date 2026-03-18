@@ -22,7 +22,17 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
 
   useEffect(() => {
     sessionStorage.setItem('ai_chat_messages', JSON.stringify(messages));
+    window.dispatchEvent(new Event('storage'));
   }, [messages]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const saved = sessionStorage.getItem('ai_chat_messages');
+      if (saved) setMessages(JSON.parse(saved));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -132,7 +142,14 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
               )}
               <div className={`chat-bubble ${msg.role}`}>
                 {msg.role === 'assistant'
-                  ? <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  ? <ReactMarkdown
+                      components={{
+                        li: ({children}) => <li style={{marginBottom: '2px'}}>{children}</li>,
+                        p: ({children}) => <p style={{margin: '0 0 4px 0'}}>{children}</p>,
+                        ul: ({children}) => <ul style={{margin: '4px 0', paddingLeft: '18px'}}>{children}</ul>,
+                        ol: ({children}) => <ol style={{margin: '4px 0', paddingLeft: '18px'}}>{children}</ol>,
+                      }}
+                    >{msg.content}</ReactMarkdown>
                   : msg.content}
               </div>
               {msg.role === 'user' && (
