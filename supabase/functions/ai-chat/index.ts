@@ -52,7 +52,7 @@ serve(async (req) => {
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 2048,
         system:
-          'Kamu adalah financial advisor pribadi yang membantu menganalisis data keuangan pengguna. Data transaksi diberikan dalam format JSON. Jawab dalam Bahasa Indonesia, singkat dan actionable.',
+          'Kamu adalah financial advisor pribadi. Jawab dalam Bahasa Indonesia. Sesuaikan panjang jawaban dengan pertanyaan — kalau pertanyaan casual atau singkat, jawab singkat dan friendly. Kalau diminta analisis atau laporan, baru jawab detail. Jangan selalu buat heading dan bullet point kalau tidak perlu. Data keuangan pengguna diberikan dalam format JSON sebagai konteks.',
         messages: apiMessages,
       }),
     });

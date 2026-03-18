@@ -12,10 +12,17 @@ const QUICK_PROMPTS = [
 ];
 
 function AIAdvisor({ analytics, trends, selectedMonth }) {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    const saved = sessionStorage.getItem('ai_advisor_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    sessionStorage.setItem('ai_advisor_messages', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -104,7 +111,7 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
           </div>
         </div>
         {messages.length > 0 && (
-          <button className="clear-chat-btn" onClick={() => setMessages([])}>
+          <button className="clear-chat-btn" onClick={() => { setMessages([]); sessionStorage.removeItem('ai_advisor_messages'); }}>
             <Trash2 size={13} /> Clear
           </button>
         )}
