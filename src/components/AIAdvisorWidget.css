@@ -3,45 +3,30 @@
   position: fixed;
   bottom: 80px;
   right: 16px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
+  border-radius: 24px;
+  padding: 10px 16px;
   border: none;
   background: var(--brand-gradient);
   color: white;
   cursor: pointer;
   z-index: 1100;
-  box-shadow: var(--shadow-brand-lg);
+  box-shadow: 0 4px 20px rgba(37,99,235,0.35), 0 2px 8px rgba(0,0,0,0.12);
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
-.widget-fab::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid rgba(37,99,235,0.3);
-  animation: fabRing 2.4s ease-in-out infinite;
-}
-
-@keyframes fabRing {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50%       { transform: scale(1.15); opacity: 0; }
-}
-
-.widget-fab.open { animation: none; }
-.widget-fab.open::after { display: none; }
 
 .widget-fab:hover {
-  transform: translateY(-3px) scale(1.06);
-  box-shadow: 0 12px 32px rgba(37,99,235,0.45);
+  transform: scale(1.03);
+  box-shadow: 0 6px 24px rgba(37,99,235,0.45), 0 2px 10px rgba(0,0,0,0.15);
 }
 
 .widget-fab.open:hover {
-  transform: scale(1.06);
+  transform: scale(1.03);
 }
 
 /* ─── Overlay ────────────────────────────────────────────── */
@@ -421,8 +406,6 @@
   .widget-fab {
     right: 12px;
     bottom: 76px;
-    width: 48px;
-    height: 48px;
   }
 
   .widget-bubble { max-width: 88%; }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, Trash2 } from 'lucide-react';
+import { Bot, Send, X, Trash2, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../contexts/AuthContext';
 import { useTransactions } from '../hooks/useTransactions';
@@ -215,7 +215,12 @@ function AIAdvisorWidget() {
         onClick={() => setIsOpen(v => !v)}
         title="AI Financial Advisor"
       >
-        {isOpen ? <X size={20} /> : <Bot size={22} />}
+        {isOpen ? <X size={16} /> : (
+          <>
+            <Sparkles size={16} />
+            <span>AI Assistant</span>
+          </>
+        )}
       </button>
     </>
   );
