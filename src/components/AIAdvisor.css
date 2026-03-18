@@ -318,6 +318,7 @@
 .chat-bubble.assistant ul,
 .chat-bubble.assistant ol           { margin: 4px 0; padding-left: 20px; }
 .chat-bubble.assistant li           { margin: 2px 0; }
+.chat-bubble.assistant li > p      { margin: 0; }
 .chat-bubble.assistant h1,
 .chat-bubble.assistant h2,
 .chat-bubble.assistant h3           { margin: 8px 0 4px 0; font-size: 1em; font-weight: 600; }
