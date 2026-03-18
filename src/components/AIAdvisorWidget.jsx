@@ -58,17 +58,7 @@ function AIAdvisorWidget() {
 
   useEffect(() => {
     sessionStorage.setItem('ai_chat_messages', JSON.stringify(messages));
-    window.dispatchEvent(new Event('storage'));
   }, [messages]);
-
-  useEffect(() => {
-    const handleStorage = () => {
-      const saved = sessionStorage.getItem('ai_chat_messages');
-      if (saved) setMessages(JSON.parse(saved));
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
