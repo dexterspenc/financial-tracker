@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import './TransactionForm.css';
 import { ArrowDown } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useTransactions } from './hooks/useTransactions';

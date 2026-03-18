@@ -1,0 +1,17 @@
+/* ─── Radio type selector (scoped to TransactionForm) ────── */
+/* Gap 12px and min-height 48px for comfortable mobile touch targets */
+.transaction-form .radio-group {
+  gap: 12px;
+}
+
+.transaction-form .radio-label {
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 480px) {
+  .transaction-form .radio-group {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

@@ -63,6 +63,13 @@ function HomePage() {
     return Number(amount).toLocaleString('id-ID');
   };
 
+  // Formats net cashflow with explicit sign: '+Rp X' for positive, '-Rp X' for negative
+  const fmtCashflow = (amount) => {
+    if (hideBalance) return 'Rp ••••••';
+    const sign = amount >= 0 ? '+' : '-';
+    return `${sign}Rp ${Math.abs(amount).toLocaleString('id-ID')}`;
+  };
+
   const currentMonthLabel = format(new Date(), 'MMMM yyyy');
 
   return (
@@ -91,9 +98,7 @@ function HomePage() {
           <div className="summary-hero">
             <div className="hero-label">Net Cashflow</div>
             <div className="hero-amount">
-              {hideBalance
-                ? 'Rp ••••••'
-                : `${stats.netCashflow >= 0 ? '+' : '-'}Rp ${Math.abs(stats.netCashflow).toLocaleString('id-ID')}`}
+              {fmtCashflow(stats.netCashflow)}
             </div>
             <div className="hero-stats">
               <div className="hero-stat">
