@@ -217,7 +217,7 @@ function AIAdvisorWidget() {
       >
         {isOpen ? <X size={16} /> : (
           <>
-            <Sparkles size={16} />
+            <Bot size={18} />
             <span>AI Assistant</span>
           </>
         )}
