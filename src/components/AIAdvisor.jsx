@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Bot, Send, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useAIChat } from '../contexts/AIChatContext';
 import { supabase } from '../lib/supabase';
 import './AIAdvisor.css';
 
@@ -12,17 +13,10 @@ const QUICK_PROMPTS = [
 ];
 
 function AIAdvisor({ analytics, trends, selectedMonth }) {
-  const [messages, setMessages] = useState(() => {
-    const saved = sessionStorage.getItem('ai_chat_messages');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { messages, setMessages, clearMessages } = useAIChat();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
-
-  useEffect(() => {
-    sessionStorage.setItem('ai_chat_messages', JSON.stringify(messages));
-  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -111,7 +105,7 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
           </div>
         </div>
         {messages.length > 0 && (
-          <button className="clear-chat-btn" onClick={() => { setMessages([]); sessionStorage.removeItem('ai_chat_messages'); }}>
+          <button className="clear-chat-btn" onClick={clearMessages}>
             <Trash2 size={13} /> Clear
           </button>
         )}
@@ -134,10 +128,13 @@ function AIAdvisor({ analytics, trends, selectedMonth }) {
                 {msg.role === 'assistant'
                   ? <ReactMarkdown
                       components={{
-                        li: ({children}) => <li style={{marginBottom: '2px'}}>{children}</li>,
-                        p: ({children}) => <p style={{margin: '0 0 4px 0'}}>{children}</p>,
+                        p: ({node, children}) => {
+                          const isInsideLi = node?.parent?.type === 'listItem';
+                          return <p style={{margin: isInsideLi ? '0' : '0 0 6px 0'}}>{children}</p>;
+                        },
                         ul: ({children}) => <ul style={{margin: '4px 0', paddingLeft: '18px'}}>{children}</ul>,
                         ol: ({children}) => <ol style={{margin: '4px 0', paddingLeft: '18px'}}>{children}</ol>,
+                        li: ({children}) => <li style={{margin: '1px 0', padding: '0'}}>{children}</li>,
                       }}
                     >{msg.content}</ReactMarkdown>
                   : msg.content}

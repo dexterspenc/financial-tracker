@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { AIChatProvider } from './contexts/AIChatContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import AddPage from './pages/AddPage';
@@ -25,7 +26,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
             {/* Protected routes — ProtectedRoute renders Outlet + BottomNav + AIAdvisorWidget */}
-            <Route element={<ProtectedRoute />}>
+            <Route element={<AIChatProvider><ProtectedRoute /></AIChatProvider>}>
               <Route path="/" element={<HomePage />} />
               <Route path="/add" element={<AddPage />} />
               <Route path="/history" element={<HistoryPage />} />

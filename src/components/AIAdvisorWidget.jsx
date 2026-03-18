@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, Trash2, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../contexts/AuthContext';
+import { useAIChat } from '../contexts/AIChatContext';
 import { useTransactions } from '../hooks/useTransactions';
 import { supabase } from '../lib/supabase';
 import './AIAdvisorWidget.css';
@@ -34,12 +35,9 @@ function buildTransactionContext(transactions) {
 
 function AIAdvisorWidget() {
   const { user } = useAuth();
+  const { messages, setMessages, clearMessages } = useAIChat();
   const { fetchTransactions } = useTransactions();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState(() => {
-    const saved = sessionStorage.getItem('ai_chat_messages');
-    return saved ? JSON.parse(saved) : [];
-  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
@@ -55,10 +53,6 @@ function AIAdvisorWidget() {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    sessionStorage.setItem('ai_chat_messages', JSON.stringify(messages));
-  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -132,7 +126,7 @@ function AIAdvisorWidget() {
           </div>
           <div className="widget-header-actions">
             {messages.length > 0 && (
-              <button className="widget-clear-btn" onClick={() => { setMessages([]); sessionStorage.removeItem('ai_chat_messages'); }} title="Clear chat">
+              <button className="widget-clear-btn" onClick={clearMessages} title="Clear chat">
                 <Trash2 size={13} />
               </button>
             )}
@@ -159,10 +153,13 @@ function AIAdvisorWidget() {
                   {msg.role === 'assistant'
                     ? <ReactMarkdown
                         components={{
-                          li: ({children}) => <li style={{marginBottom: '2px'}}>{children}</li>,
-                          p: ({children}) => <p style={{margin: '0 0 4px 0'}}>{children}</p>,
+                          p: ({node, children}) => {
+                            const isInsideLi = node?.parent?.type === 'listItem';
+                            return <p style={{margin: isInsideLi ? '0' : '0 0 6px 0'}}>{children}</p>;
+                          },
                           ul: ({children}) => <ul style={{margin: '4px 0', paddingLeft: '18px'}}>{children}</ul>,
                           ol: ({children}) => <ol style={{margin: '4px 0', paddingLeft: '18px'}}>{children}</ol>,
+                          li: ({children}) => <li style={{margin: '1px 0', padding: '0'}}>{children}</li>,
                         }}
                       >{msg.content}</ReactMarkdown>
                     : msg.content}
