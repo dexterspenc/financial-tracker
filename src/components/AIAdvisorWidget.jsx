@@ -37,7 +37,7 @@ function AIAdvisorWidget() {
   const { fetchTransactions } = useTransactions();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(() => {
-    const saved = sessionStorage.getItem('ai_widget_messages');
+    const saved = sessionStorage.getItem('ai_chat_messages');
     return saved ? JSON.parse(saved) : [];
   });
   const [input, setInput] = useState('');
@@ -57,7 +57,7 @@ function AIAdvisorWidget() {
   }, [isOpen]);
 
   useEffect(() => {
-    sessionStorage.setItem('ai_widget_messages', JSON.stringify(messages));
+    sessionStorage.setItem('ai_chat_messages', JSON.stringify(messages));
   }, [messages]);
 
   useEffect(() => {
@@ -132,7 +132,7 @@ function AIAdvisorWidget() {
           </div>
           <div className="widget-header-actions">
             {messages.length > 0 && (
-              <button className="widget-clear-btn" onClick={() => { setMessages([]); sessionStorage.removeItem('ai_widget_messages'); }} title="Clear chat">
+              <button className="widget-clear-btn" onClick={() => { setMessages([]); sessionStorage.removeItem('ai_chat_messages'); }} title="Clear chat">
                 <Trash2 size={13} />
               </button>
             )}
