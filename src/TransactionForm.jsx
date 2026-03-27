@@ -5,6 +5,7 @@ import { ArrowDown } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useTransactions } from './hooks/useTransactions';
 import { useData } from './contexts/DataContext';
+import { supabase } from './lib/supabase';
 import { toast } from './components/ui/Toast';
 
 const EMPTY_FORM = {
@@ -134,9 +135,7 @@ function TransactionForm() {
       const pairId = `TRF-${data[0].id.slice(0, 6).toUpperCase()}`;
       await Promise.all(
         data.map(t =>
-          import('./lib/supabase').then(({ supabase }) =>
-            supabase.from('transactions').update({ transfer_pair_id: pairId }).eq('id', t.id)
-          )
+          supabase.from('transactions').update({ transfer_pair_id: pairId }).eq('id', t.id)
         )
       );
     }
