@@ -21,7 +21,7 @@ function AnalyticsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { fetchTransactions } = useTransactions();
-  const { fetchAccounts } = useAccounts();
+  const { fetchAccounts, fetchAccountBalances } = useAccounts();
   const { fetchBudgets } = useBudgets();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -63,6 +63,7 @@ function AnalyticsPage() {
     },
     selectedAccount: null
   });
+  const [openingBalances, setOpeningBalances] = useState({ byName: {}, byPurpose: {} });
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reportFilters, setReportFilters] = useState({
@@ -82,16 +83,16 @@ function AnalyticsPage() {
 
   useEffect(() => {
     if (allTransactions.length > 0) {
-      calculateAnalytics(allTransactions);
+      calculateAnalytics(allTransactions, openingBalances.byPurpose);
       setTrends(calculateTrends(allTransactions));
     }
-  }, [selectedMonth, allTransactions]);
+  }, [selectedMonth, allTransactions, openingBalances]);
 
   useEffect(() => {
     if (activeTab === 'accounts' && allTransactions.length > 0) {
-      setAccountsData(computeAccountsData(allTransactions, selectedMonth));
+      setAccountsData(computeAccountsData(allTransactions, selectedMonth, openingBalances.byName));
     }
-  }, [activeTab, selectedMonth, allTransactions]);
+  }, [activeTab, selectedMonth, allTransactions, openingBalances]);
 
   useEffect(() => {
     if (activeTab === 'budget' && user) {
@@ -102,8 +103,23 @@ function AnalyticsPage() {
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const { data, error } = await fetchTransactions(user.id);
+      const [{ data, error }, { data: balancesData }] = await Promise.all([
+        fetchTransactions(user.id),
+        fetchAccountBalances(user.id),
+      ]);
       if (error) throw error;
+
+      const byName = {};
+      const byPurpose = {};
+      (balancesData || []).forEach(b => {
+        if (b.accounts?.name) {
+          byName[b.accounts.name] = (byName[b.accounts.name] || 0) + b.balance;
+        }
+        if (b.accounts?.purpose) {
+          byPurpose[b.accounts.purpose] = (byPurpose[b.accounts.purpose] || 0) + b.balance;
+        }
+      });
+      setOpeningBalances({ byName, byPurpose });
       setAllTransactions(data);
     } catch {
       // silently fail
@@ -117,7 +133,7 @@ function AnalyticsPage() {
     setAccounts(data || []);
   };
 
-  const calculateAnalytics = (txns) => {
+  const calculateAnalytics = (txns, openingByPurpose = {}) => {
     const currentMonth = selectedMonth;
     const lastMonth = format(subMonths(new Date(selectedMonth + '-01'), 1), 'yyyy-MM');
 
@@ -128,10 +144,10 @@ function AnalyticsPage() {
     const categoryPurposes = {};
     const expenseTransactions = [];
     const accountBalances = {
-      Living: 0,
-      Playing: 0,
-      Saving: 0,
-      Investment: 0
+      Living:     openingByPurpose.Living     || 0,
+      Playing:    openingByPurpose.Playing    || 0,
+      Saving:     openingByPurpose.Saving     || 0,
+      Investment: openingByPurpose.Investment || 0,
     };
 
     txns.forEach(txn => {
@@ -223,9 +239,9 @@ function AnalyticsPage() {
     };
   };
 
-  const computeAccountsData = (txns, month) => {
-    // Compute all-time balances per account
-    const balances = {};
+  const computeAccountsData = (txns, month, openingBalanceMap = {}) => {
+    // Compute all-time balances per account, seeded with opening balances
+    const balances = { ...openingBalanceMap };
     txns.forEach(txn => {
       if (txn.account) {
         balances[txn.account] = (balances[txn.account] || 0) + (txn.debit || 0) - (txn.credit || 0);
