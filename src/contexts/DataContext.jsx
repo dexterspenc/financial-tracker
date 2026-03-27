@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
-import { normalizeTxn } from '../hooks/useTransactions';
+import { normalizeTxn } from '../utils/normalizeTxn';
 
 const DataContext = createContext(null);
 
