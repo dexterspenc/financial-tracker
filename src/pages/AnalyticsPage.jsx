@@ -68,6 +68,16 @@ function AnalyticsPage() {
     flowType: 'All'
   });
 
+  const openingBalances = useMemo(() => {
+    const byName = {};
+    const byPurpose = {};
+    accountBalances.forEach(b => {
+      if (b.accounts?.name)    byName[b.accounts.name]       = (byName[b.accounts.name]       || 0) + b.balance;
+      if (b.accounts?.purpose) byPurpose[b.accounts.purpose] = (byPurpose[b.accounts.purpose] || 0) + b.balance;
+    });
+    return { byName, byPurpose };
+  }, [accountBalances]);
+
   useEffect(() => {
     if (allTransactions.length > 0) {
       calculateAnalytics(allTransactions, openingBalances.byPurpose);
@@ -86,16 +96,6 @@ function AnalyticsPage() {
       loadBudgets();
     }
   }, [activeTab, selectedMonth, user]);
-
-  const openingBalances = useMemo(() => {
-    const byName = {};
-    const byPurpose = {};
-    accountBalances.forEach(b => {
-      if (b.accounts?.name)    byName[b.accounts.name]       = (byName[b.accounts.name]       || 0) + b.balance;
-      if (b.accounts?.purpose) byPurpose[b.accounts.purpose] = (byPurpose[b.accounts.purpose] || 0) + b.balance;
-    });
-    return { byName, byPurpose };
-  }, [accountBalances]);
 
   const calculateAnalytics = (txns, openingByPurpose = {}) => {
     const currentMonth = selectedMonth;
