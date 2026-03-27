@@ -1,6 +1,6 @@
 # PROGRESS.md — SaaS Rebuild Progress Log
 
-Last updated: 2026-03-16 (Session 7 — Deploy & documentation)
+Last updated: 2026-03-27 (Session 8 — Bug fixes, DataContext, account balance)
 
 ---
 
@@ -161,8 +161,45 @@ Last updated: 2026-03-16 (Session 7 — Deploy & documentation)
 
 ---
 
+### P7 — Bug Fixes, DataContext & Account Balance (Session 8 — 2026-03-27)
+
+**AI Advisor fixes (pre-session commits):**
+- ✅ AI FAB button redesigned as pill with Sparkles icon and label
+- ✅ Bot icon restored; markdown spacing fixed via component override
+- ✅ AI chat session synced via AIChatContext; storage sync infinite loop reverted and fixed properly
+
+**Transfer categories consistency:**
+- ✅ `src/pages/OnboardingPage.jsx` — `TRANSFER_CATEGORIES` updated from 4 Indonesian names to 6 canonical English names matching SQL seed
+- ✅ `supabase/migrations/005_fix_transfer_categories.sql` — renames `Tabungan`→`Saving`, `Penarikan Tabungan`→`Saving Withdrawal` for existing users; INSERTs missing `Investment Buy` and `Investment Sell` per user
+- ✅ Migration 005 applied in Supabase Dashboard
+
+**Account balance in Analytics:**
+- ✅ `src/hooks/useAccounts.js` — `fetchAccountBalances` confirmed returning `accounts(id, name, purpose)` join
+- ✅ `src/pages/AnalyticsPage.jsx` — opening balance from `account_balances` table now included in both `calculateAnalytics` (by purpose) and `computeAccountsData` (by account name)
+
+**DataContext — centralized data fetching:**
+- ✅ `src/contexts/DataContext.jsx` — new context; fetches transactions, accounts, categories, accountBalances in one `Promise.all` on login; exposes `refetch()` to invalidate after mutations; clears all state on logout
+- ✅ `src/App.jsx` — `<DataProvider>` wraps protected routes
+- ✅ `src/pages/HomePage.jsx` — migrated to `useData()`; stats via `useMemo`; eliminates per-navigation re-fetch
+- ✅ `src/pages/HistoryPage.jsx` — migrated to `useData()`; delete/edit success calls `refetch()` instead of re-fetching locally
+- ✅ `src/pages/AnalyticsPage.jsx` — migrated to `useData()`; `openingBalances` derived via `useMemo` from context `accountBalances`
+- ✅ `src/TransactionForm.jsx` — migrated to `useData()`; calls `refetch()` after successful submit
+- ✅ `src/components/EditModal.jsx` — migrated to `useData()`; eliminates per-open fetch of accounts/categories
+
+**TDZ production build error — fixed (4 iterations):**
+- ✅ Removed hook factory imports (`useTransactions`, `useAccounts`, `useCategories`) from DataContext — supabase called directly
+- ✅ `src/utils/normalizeTxn.js` — extracted `normalizeTxn` to standalone utility; DataContext and useTransactions both import from here (no circular path)
+- ✅ `src/TransactionForm.jsx` — replaced `import('./lib/supabase')` dynamic import with static import (mixed static/dynamic on same module caused Rollup TDZ)
+- ✅ `src/pages/AnalyticsPage.jsx` — moved `openingBalances` `useMemo` declaration above useEffects that reference it in dependency arrays
+
+**Onboarding:**
+- ✅ First real user completed onboarding successfully — wizard confirmed working end-to-end
+
+---
+
 ## Known Bugs / In Progress
 
+- ⚠️ **Transfer form: tidak ada kategori selector** — saat mode Transfer, user tidak bisa memilih kategori spesifik (Topup, Tabungan, dll); form langsung pakai kategori 'Transfer' default
 - ⚠️ **Net cashflow minus tidak tampil tanda minus** — `HomePage.jsx`: nilai cashflow negatif tidak diformat dengan tanda `-`; perlu cek logika display di summary cards
 - ⚠️ **UI polish masih diperlukan** — beberapa halaman (Onboarding, Settings) perlu review visual di mobile: spacing, font size, loading states
 
