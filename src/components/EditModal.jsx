@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { useAuth } from '../contexts/AuthContext';
 import { useTransactions } from '../hooks/useTransactions';
-import { useAccounts } from '../hooks/useAccounts';
-import { useCategories } from '../hooks/useCategories';
+import { useData } from '../contexts/DataContext';
 import { Dialog, DialogContent } from './ui/Dialog';
 import { toast } from './ui/Toast';
 import './EditModal.css';
 
 function EditModal({ transaction, onClose, onSuccess }) {
-  const { user } = useAuth();
   const { updateTransaction } = useTransactions();
-  const { fetchAccounts } = useAccounts();
-  const { fetchCategories } = useCategories();
+  const { accounts, categories } = useData();
 
   const [formData, setFormData] = useState({
     date: '',
@@ -22,24 +18,10 @@ function EditModal({ transaction, onClose, onSuccess }) {
     flowType: 'Expense',
     note: '',
   });
-  const [accounts, setAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    if (user && transaction) loadFormData();
-  }, [user, transaction]);
-
-  const loadFormData = async () => {
-    setDataLoading(true);
-    const [{ data: accs }, { data: cats }] = await Promise.all([
-      fetchAccounts(user.id),
-      fetchCategories(user.id),
-    ]);
-    setAccounts(accs);
-    setCategories(cats);
-
+    if (!transaction) return;
     const amount = transaction.debit > 0 ? transaction.debit : transaction.credit;
     setFormData({
       date: format(new Date(transaction.date + 'T00:00:00'), 'yyyy-MM-dd'),
@@ -49,8 +31,7 @@ function EditModal({ transaction, onClose, onSuccess }) {
       flowType: transaction.flowType === 'Income' ? 'Income' : 'Expense',
       note: transaction.note ?? '',
     });
-    setDataLoading(false);
-  };
+  }, [transaction]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,11 +95,6 @@ function EditModal({ transaction, onClose, onSuccess }) {
   return (
     <Dialog open={!!transaction} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent title="Edit Transaction">
-        {dataLoading ? (
-          <div className="loading-state">
-            <div className="loading-spinner" />
-          </div>
-        ) : (
           <form onSubmit={handleSubmit} className="edit-form">
             <div className="edit-form-grid">
               <div className="form-group">
@@ -222,7 +198,6 @@ function EditModal({ transaction, onClose, onSuccess }) {
               </button>
             </div>
           </form>
-        )}
       </DialogContent>
     </Dialog>
   );

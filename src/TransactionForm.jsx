@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import './TransactionForm.css';
 import { ArrowDown } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useTransactions } from './hooks/useTransactions';
-import { useAccounts } from './hooks/useAccounts';
-import { useCategories } from './hooks/useCategories';
+import { useData } from './contexts/DataContext';
 import { toast } from './components/ui/Toast';
 
 const EMPTY_FORM = {
@@ -22,30 +21,11 @@ const EMPTY_FORM = {
 function TransactionForm() {
   const { user } = useAuth();
   const { addTransaction, addTransactionPair } = useTransactions();
-  const { fetchAccounts } = useAccounts();
-  const { fetchCategories } = useCategories();
+  const { accounts, categories, loading: dataLoading, refetch } = useData();
 
   const [mode, setMode] = useState('normal');
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const [accounts, setAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) loadFormData();
-  }, [user]);
-
-  const loadFormData = async () => {
-    setDataLoading(true);
-    const [{ data: accs }, { data: cats }] = await Promise.all([
-      fetchAccounts(user.id),
-      fetchCategories(user.id),
-    ]);
-    setAccounts(accs);
-    setCategories(cats);
-    setDataLoading(false);
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -101,6 +81,7 @@ function TransactionForm() {
     if (error) throw error;
 
     toast.success('Transaksi berhasil ditambahkan!');
+    refetch();
     setFormData({ ...EMPTY_FORM, date: formData.date });
   };
 
@@ -161,6 +142,7 @@ function TransactionForm() {
     }
 
     toast.success('Transfer berhasil dibuat!');
+    refetch();
     setFormData({ ...EMPTY_FORM, date: formData.date });
   };
 

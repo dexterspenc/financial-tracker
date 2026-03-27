@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format, subMonths } from 'date-fns';
 import { Doughnut, Line } from 'react-chartjs-2';
 import {
@@ -9,8 +9,7 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Filler);
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTransactions } from '../hooks/useTransactions';
-import { useAccounts } from '../hooks/useAccounts';
+import { useData } from '../contexts/DataContext';
 import { useBudgets } from '../hooks/useBudgets';
 import AnalyticsTabs from '../components/AnalyticsTabs.jsx';
 import AIAdvisor from '../components/AIAdvisor.jsx';
@@ -20,14 +19,11 @@ import './AnalyticsPage.css';
 function AnalyticsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { fetchTransactions } = useTransactions();
-  const { fetchAccounts, fetchAccountBalances } = useAccounts();
+  const { allTransactions, accounts, accountBalances, loading } = useData();
   const { fetchBudgets } = useBudgets();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [allTransactions, setAllTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
   const [analytics, setAnalytics] = useState({
     monthIncome: 0,
     monthExpense: 0,
@@ -63,9 +59,7 @@ function AnalyticsPage() {
     },
     selectedAccount: null
   });
-  const [openingBalances, setOpeningBalances] = useState({ byName: {}, byPurpose: {} });
   const [budgets, setBudgets] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [reportFilters, setReportFilters] = useState({
     dateFrom: format(new Date(format(new Date(), 'yyyy-MM') + '-01'), 'yyyy-MM-dd'),
     dateTo: format(new Date(), 'yyyy-MM-dd'),
@@ -75,13 +69,6 @@ function AnalyticsPage() {
   });
 
   useEffect(() => {
-    if (user) {
-      loadAnalytics();
-      loadAccountsList();
-    }
-  }, [user]);
-
-  useEffect(() => {
     if (allTransactions.length > 0) {
       calculateAnalytics(allTransactions, openingBalances.byPurpose);
       setTrends(calculateTrends(allTransactions));
@@ -89,9 +76,9 @@ function AnalyticsPage() {
   }, [selectedMonth, allTransactions, openingBalances]);
 
   useEffect(() => {
-    if (activeTab === 'accounts' && allTransactions.length > 0) {
-      setAccountsData(computeAccountsData(allTransactions, selectedMonth, openingBalances.byName));
-    }
+    if (activeTab !== 'accounts') return;
+    if (!allTransactions.length && Object.keys(openingBalances.byName).length === 0) return;
+    setAccountsData(computeAccountsData(allTransactions, selectedMonth, openingBalances.byName));
   }, [activeTab, selectedMonth, allTransactions, openingBalances]);
 
   useEffect(() => {
@@ -100,38 +87,15 @@ function AnalyticsPage() {
     }
   }, [activeTab, selectedMonth, user]);
 
-  const loadAnalytics = async () => {
-    setLoading(true);
-    try {
-      const [{ data, error }, { data: balancesData }] = await Promise.all([
-        fetchTransactions(user.id),
-        fetchAccountBalances(user.id),
-      ]);
-      if (error) throw error;
-
-      const byName = {};
-      const byPurpose = {};
-      (balancesData || []).forEach(b => {
-        if (b.accounts?.name) {
-          byName[b.accounts.name] = (byName[b.accounts.name] || 0) + b.balance;
-        }
-        if (b.accounts?.purpose) {
-          byPurpose[b.accounts.purpose] = (byPurpose[b.accounts.purpose] || 0) + b.balance;
-        }
-      });
-      setOpeningBalances({ byName, byPurpose });
-      setAllTransactions(data);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAccountsList = async () => {
-    const { data } = await fetchAccounts(user.id);
-    setAccounts(data || []);
-  };
+  const openingBalances = useMemo(() => {
+    const byName = {};
+    const byPurpose = {};
+    accountBalances.forEach(b => {
+      if (b.accounts?.name)    byName[b.accounts.name]       = (byName[b.accounts.name]       || 0) + b.balance;
+      if (b.accounts?.purpose) byPurpose[b.accounts.purpose] = (byPurpose[b.accounts.purpose] || 0) + b.balance;
+    });
+    return { byName, byPurpose };
+  }, [accountBalances]);
 
   const calculateAnalytics = (txns, openingByPurpose = {}) => {
     const currentMonth = selectedMonth;

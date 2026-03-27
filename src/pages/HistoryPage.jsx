@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Pencil, Trash2 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { useTransactions } from '../hooks/useTransactions';
+import { useData } from '../contexts/DataContext';
 import EditModal from '../components/EditModal';
 import { ConfirmDialog } from '../components/ui/Dialog';
 import { toast } from '../components/ui/Toast';
 import './HistoryPage.css';
 
 function HistoryPage() {
-  const { user } = useAuth();
-  const { fetchTransactions, deleteTransaction } = useTransactions();
-  const [transactions, setTransactions] = useState([]);
+  const { allTransactions: transactions, loading, refetch } = useData();
+  const { deleteTransaction } = useTransactions();
   const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     month: 'all',
     account: 'all',
@@ -25,19 +23,7 @@ function HistoryPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => { if (user) loadTransactions(); }, [user]);
   useEffect(() => { applyFilters(); }, [transactions, filters]);
-
-  const loadTransactions = async () => {
-    setLoading(true);
-    const { data, error } = await fetchTransactions(user.id);
-    if (error) {
-      toast.error('Gagal memuat transaksi');
-    } else {
-      setTransactions(data);
-    }
-    setLoading(false);
-  };
 
   const applyFilters = () => {
     let filtered = [...transactions];
@@ -72,14 +58,14 @@ function HistoryPage() {
       toast.error(`Gagal hapus: ${error.message}`);
     } else {
       setDeleteTarget(null);
-      await loadTransactions();
+      refetch();
       toast.success('Transaksi berhasil dihapus');
     }
     setDeleteLoading(false);
   };
 
-  const handleEditSuccess = async () => {
-    await loadTransactions();
+  const handleEditSuccess = () => {
+    refetch();
     toast.success('Transaksi berhasil diperbarui');
   };
 

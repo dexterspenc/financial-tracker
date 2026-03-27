@@ -1,62 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Eye, EyeOff, Plus } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useTransactions } from '../hooks/useTransactions';
-import { useAccounts } from '../hooks/useAccounts';
+import { useData } from '../contexts/DataContext';
 import './HomePage.css';
 
 function HomePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { fetchTransactions } = useTransactions();
-  const { fetchAccountBalances } = useAccounts();
-  const [stats, setStats] = useState({
-    netCashflow: 0,
-    monthIncome: 0,
-    monthExpense: 0,
-    recentTransactions: []
-  });
-  const [accountBalances, setAccountBalances] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { allTransactions, accountBalances, loading } = useData();
   const [hideBalance, setHideBalance] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-      fetchAccountBalances(user.id).then(({ data }) => setAccountBalances(data ?? []));
-    }
-  }, [user]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const { data: txns, error } = await fetchTransactions(user.id);
-      if (error) throw error;
-
-      const currentMonth = format(new Date(), 'yyyy-MM');
-      let monthIncome = 0;
-      let monthExpense = 0;
-
-      txns.forEach(txn => {
-        if (txn.month?.substring(0, 7) === currentMonth) {
-          if (txn.flowType === 'Income')  monthIncome  += txn.debit;
-          if (txn.flowType === 'Expense') monthExpense += txn.credit;
-        }
-      });
-
-      setStats({
-        netCashflow: monthIncome - monthExpense,
-        monthIncome,
-        monthExpense,
-        recentTransactions: txns.slice(0, 5)
-      });
-    } catch {
-      // silently fail — UI shows empty state
-    } finally {
-      setLoading(false);
-    }
-  };
+  const stats = useMemo(() => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    let monthIncome = 0;
+    let monthExpense = 0;
+    allTransactions.forEach(txn => {
+      if (txn.month?.substring(0, 7) === currentMonth) {
+        if (txn.flowType === 'Income')  monthIncome  += txn.debit;
+        if (txn.flowType === 'Expense') monthExpense += txn.credit;
+      }
+    });
+    return {
+      netCashflow: monthIncome - monthExpense,
+      monthIncome,
+      monthExpense,
+      recentTransactions: allTransactions.slice(0, 5),
+    };
+  }, [allTransactions]);
 
   const fmt = (amount) => {
     if (hideBalance) return '••••••';
