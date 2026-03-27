@@ -10,18 +10,18 @@ import './OnboardingPage.css';
 // ── Preset data ────────────────────────────────────────────────
 
 const PRESET_ACCOUNTS = [
-  { name: 'BCA',        purpose: 'Living'     },
-  { name: 'Mandiri',    purpose: 'Living'     },
-  { name: 'BNI',        purpose: 'Living'     },
-  { name: 'BRI',        purpose: 'Living'     },
-  { name: 'CIMB Niaga', purpose: 'Living'     },
-  { name: 'Gopay',      purpose: 'Living'     },
-  { name: 'OVO',        purpose: 'Living'     },
-  { name: 'Dana',       purpose: 'Living'     },
-  { name: 'ShopeePay',  purpose: 'Living'     },
-  { name: 'Tunai',      purpose: 'Living'     },
-  { name: 'Blu',        purpose: 'Saving'     },
-  { name: 'Jenius',     purpose: 'Saving'     },
+  { name: 'BCA',        abbr: 'BCA',  purpose: 'Living'     },
+  { name: 'Mandiri',    abbr: 'MDR',  purpose: 'Living'     },
+  { name: 'BNI',        abbr: 'BNI',  purpose: 'Living'     },
+  { name: 'BRI',        abbr: 'BRI',  purpose: 'Living'     },
+  { name: 'CIMB Niaga', abbr: 'CIMB', purpose: 'Living'     },
+  { name: 'Gopay',      abbr: 'GP',   purpose: 'Living'     },
+  { name: 'OVO',        abbr: 'OVO',  purpose: 'Living'     },
+  { name: 'Dana',       abbr: 'DANA', purpose: 'Living'     },
+  { name: 'ShopeePay',  abbr: 'SPY',  purpose: 'Living'     },
+  { name: 'Tunai',      abbr: 'CASH', purpose: 'Living'     },
+  { name: 'Blu',        abbr: 'BLU',  purpose: 'Saving'     },
+  { name: 'Jenius',     abbr: 'JNS',  purpose: 'Saving'     },
 ];
 
 const PRESET_EXPENSE = [
@@ -324,7 +324,7 @@ function OnboardingPage() {
                           </span>
                         )}
                         <span className="ob-account-avatar">
-                          {preset.name.slice(0, 2).toUpperCase()}
+                          {preset.abbr}
                         </span>
                         <span className="ob-account-name">{preset.name}</span>
                       </button>
@@ -369,7 +369,7 @@ function OnboardingPage() {
                           <Check size={11} strokeWidth={3} />
                         </span>
                         <span className="ob-account-avatar">
-                          {a.name.slice(0, 2).toUpperCase()}
+                          {a.abbr ?? a.name.slice(0, 3).toUpperCase()}
                         </span>
                         <span className="ob-account-name">{a.name}</span>
                       </button>
