@@ -34,7 +34,7 @@ const PRESET_INCOME = [
   'Gaji', 'Freelance', 'Hasil Investasi', 'Hadiah', 'Pemasukan Lain',
 ];
 
-const TRANSFER_CATEGORIES = ['Transfer', 'Topup', 'Tabungan', 'Penarikan Tabungan'];
+const TRANSFER_CATEGORIES = ['Transfer', 'Topup', 'Investment Buy', 'Investment Sell', 'Saving', 'Saving Withdrawal'];
 const PURPOSE_OPTIONS = ['Living', 'Playing', 'Saving', 'Investment'];
 
 const PURPOSE_COLOR = {
