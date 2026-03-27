@@ -28,7 +28,7 @@ function EditModal({ transaction, onClose, onSuccess }) {
       accountId: transaction.accountId ?? '',
       categoryId: transaction.categoryId ?? '',
       amount: amount?.toString() ?? '',
-      flowType: transaction.flowType === 'Income' ? 'Income' : 'Expense',
+      flowType: transaction.flowType ?? 'Expense',
       note: transaction.note ?? '',
     });
   }, [transaction]);
@@ -57,14 +57,18 @@ function EditModal({ transaction, onClose, onSuccess }) {
       const selectedCategory = categories.find(c => c.id === formData.categoryId);
       const flowType = selectedCategory?.flow_type ?? formData.flowType;
 
+      // For Transfer rows, preserve the original debit/credit direction
+      const isTransferDebit = flowType === 'Transfer' && transaction.debit > 0;
+      const isTransferCredit = flowType === 'Transfer' && transaction.credit > 0;
+
       const payload = {
         date: formData.date,
         month,
         account_id: formData.accountId,
         category_id: formData.categoryId,
         flow_type: flowType,
-        debit: flowType === 'Income' ? amount : 0,
-        credit: flowType !== 'Income' ? amount : 0,
+        debit:  flowType === 'Income'  || isTransferDebit  ? amount : 0,
+        credit: flowType === 'Expense' || isTransferCredit ? amount : 0,
         note: formData.note || null,
       };
 

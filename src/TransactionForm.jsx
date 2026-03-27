@@ -89,14 +89,6 @@ function TransactionForm() {
   const submitTransfer = async () => {
     const month = format(new Date(formData.date + 'T00:00:00'), 'yyyy-MM-01');
     const amount = parseFloat(formData.amount) || 0;
-    // Find the Transfer category (or the first transfer-type category)
-    const transferCategory = categories.find(c => c.flow_type === 'Transfer' && c.name === 'Transfer')
-      ?? categories.find(c => c.flow_type === 'Transfer');
-
-    if (!transferCategory) {
-      toast.error('Kategori Transfer tidak ditemukan. Pastikan data sudah ter-seed.');
-      return;
-    }
 
     // Row 1: Credit (money leaves source account)
     const debitRow = {
@@ -104,7 +96,7 @@ function TransactionForm() {
       date: formData.date,
       month,
       account_id: formData.fromAccountId,
-      category_id: transferCategory.id,
+      category_id: formData.categoryId,
       flow_type: 'Transfer',
       debit: 0,
       credit: amount,
@@ -118,7 +110,7 @@ function TransactionForm() {
       date: formData.date,
       month,
       account_id: formData.toAccountId,
-      category_id: transferCategory.id,
+      category_id: formData.categoryId,
       flow_type: 'Transfer',
       debit: amount,
       credit: 0,
@@ -152,9 +144,10 @@ function TransactionForm() {
     return groups;
   }, {});
 
-  // Filter categories for normal mode: Income or Expense (not Transfer)
-  const incomeCategories = categories.filter(c => c.flow_type === 'Income');
-  const expenseCategories = categories.filter(c => c.flow_type === 'Expense');
+  // Filter categories by flow type
+  const incomeCategories    = categories.filter(c => c.flow_type === 'Income');
+  const expenseCategories   = categories.filter(c => c.flow_type === 'Expense');
+  const transferCategories  = categories.filter(c => c.flow_type === 'Transfer');
 
   const quickButtons = [
     { label: '🍽️ Lunch',    categoryName: 'Daily Needs', accountName: 'BCA',  flowType: 'Expense' },
@@ -197,14 +190,14 @@ function TransactionForm() {
         <button
           type="button"
           className={`mode-btn ${mode === 'normal' ? 'active' : ''}`}
-          onClick={() => setMode('normal')}
+          onClick={() => { setMode('normal'); setFormData(prev => ({ ...prev, categoryId: '' })); }}
         >
           💵 Normal
         </button>
         <button
           type="button"
           className={`mode-btn ${mode === 'transfer' ? 'active' : ''}`}
-          onClick={() => setMode('transfer')}
+          onClick={() => { setMode('transfer'); setFormData(prev => ({ ...prev, categoryId: '' })); }}
         >
           🔄 Transfer
         </button>
@@ -332,6 +325,16 @@ function TransactionForm() {
                 required
                 min="0"
               />
+            </div>
+
+            <div className="form-group">
+              <label>📂 Kategori</label>
+              <select name="categoryId" value={formData.categoryId} onChange={handleChange} required>
+                <option value="">Pilih Kategori Transfer</option>
+                {transferCategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             </div>
           </>
         )}
