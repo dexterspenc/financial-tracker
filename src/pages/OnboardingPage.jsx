@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Check, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Plus, X, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { toast } from '../components/ui/Toast';
@@ -262,8 +262,18 @@ function OnboardingPage() {
 
   // ── Render ──────────────────────────────────────────────────
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
   return (
     <div className="ob-page">
+      <button type="button" className="ob-signout" onClick={handleSignOut}>
+        <LogOut size={14} />
+        Ganti Akun
+      </button>
+
       <div className="ob-wrap">
 
         {/* Brand */}

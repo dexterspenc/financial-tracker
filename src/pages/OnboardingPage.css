@@ -7,6 +7,28 @@
   align-items: flex-start;
   justify-content: center;
   padding: 28px 16px 56px;
+  position: relative;
+}
+
+.ob-signout {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.ob-signout:hover {
+  color: var(--text-secondary);
+  background: var(--surface-raised);
 }
 
 .ob-wrap {
