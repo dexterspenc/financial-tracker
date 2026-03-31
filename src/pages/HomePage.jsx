@@ -28,6 +28,20 @@ function HomePage() {
     };
   }, [allTransactions]);
 
+  // Running balance per account = opening balance + all credits - all debits
+  const runningBalances = useMemo(() => {
+    const map = {};
+    accountBalances.forEach(ab => {
+      map[ab.account_id] = Number(ab.balance) || 0;
+    });
+    allTransactions.forEach(txn => {
+      if (txn.accountId && txn.accountId in map) {
+        map[txn.accountId] += (txn.credit || 0) - (txn.debit || 0);
+      }
+    });
+    return map;
+  }, [accountBalances, allTransactions]);
+
   const fmt = (amount) => {
     if (hideBalance) return '••••••';
     return Number(amount).toLocaleString('id-ID');
@@ -100,7 +114,7 @@ function HomePage() {
                     <div className="account-balance-name">{ab.accounts?.name}</div>
                     <div className="account-balance-purpose">{ab.accounts?.purpose}</div>
                     <div className="account-balance-amount">
-                      Rp {hideBalance ? '••••••' : Number(ab.balance).toLocaleString('id-ID')}
+                      Rp {hideBalance ? '••••••' : (runningBalances[ab.account_id] ?? ab.balance).toLocaleString('id-ID')}
                     </div>
                   </div>
                 ))}
