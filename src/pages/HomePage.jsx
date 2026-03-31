@@ -25,6 +25,9 @@ function HomePage() {
     const todayExpense = todayTxns
       .filter(t => t.flowType === 'Expense')
       .reduce((sum, t) => sum + t.debit, 0);
+    const todayIncome = todayTxns
+      .filter(t => t.flowType === 'Income')
+      .reduce((sum, t) => sum + t.credit, 0);
     const hasTodayTxns = todayTxns.length > 0;
     return {
       netCashflow: monthIncome - monthExpense,
@@ -32,6 +35,7 @@ function HomePage() {
       monthExpense,
       todayTxns,
       todayExpense,
+      todayIncome,
       hasTodayTxns,
       recentTransactions: allTransactions.slice(0, 5),
     };
@@ -133,18 +137,29 @@ function HomePage() {
 
           <div className="recent-section">
             <div className="section-header">
-              <div className="section-title-group">
-                <h2>{stats.hasTodayTxns ? 'Transaksi Hari Ini' : 'Transaksi Terbaru'}</h2>
-                {stats.hasTodayTxns && stats.todayExpense > 0 && (
-                  <span className="today-expense">
-                    -{hideBalance ? '••••••' : `Rp ${stats.todayExpense.toLocaleString('id-ID')}`}
-                  </span>
-                )}
-              </div>
+              <h2>{stats.hasTodayTxns ? 'Transaksi Hari Ini' : 'Transaksi Terbaru'}</h2>
               <button className="view-all-btn" onClick={() => navigate('/history')}>
                 View all →
               </button>
             </div>
+
+            {stats.hasTodayTxns && (
+              <div className="today-summary-card">
+                <div className="today-summary-col">
+                  <span className="today-summary-label">Pengeluaran</span>
+                  <span className="today-summary-amount expense">
+                    -{hideBalance ? '••••••' : `Rp ${stats.todayExpense.toLocaleString('id-ID')}`}
+                  </span>
+                </div>
+                <div className="today-summary-divider" />
+                <div className="today-summary-col">
+                  <span className="today-summary-label">Pemasukan</span>
+                  <span className="today-summary-amount income">
+                    +{hideBalance ? '••••••' : `Rp ${stats.todayIncome.toLocaleString('id-ID')}`}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="transaction-list">
               {(stats.hasTodayTxns ? stats.todayTxns : stats.recentTransactions).map((txn) => {
