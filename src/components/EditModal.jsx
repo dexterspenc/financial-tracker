@@ -8,7 +8,7 @@ import './EditModal.css';
 
 function EditModal({ transaction, onClose, onSuccess }) {
   const { updateTransaction } = useTransactions();
-  const { accounts, categories } = useData();
+  const { accounts, categories, refetch } = useData();
 
   const [formData, setFormData] = useState({
     date: '',
@@ -77,6 +77,7 @@ function EditModal({ transaction, onClose, onSuccess }) {
 
       onSuccess();
       onClose();
+      refetch().catch(() => {});
     } catch (err) {
       toast.error(err.message);
     } finally {

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, subMonths } from 'date-fns';
 import { User, Wallet, Tag, PiggyBank, LogOut, Plus, Pencil, Trash2, Check, X, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
 import { useAccounts } from '../hooks/useAccounts';
 import { useCategories } from '../hooks/useCategories';
 import { useBudgets } from '../hooks/useBudgets';
@@ -138,6 +139,7 @@ function ProfilSection({ user, signOut, navigate }) {
    Kelola Akun
 ───────────────────────────────────────── */
 function AkunSection({ userId }) {
+  const { refetch } = useData();
   const { fetchAccounts } = useAccounts();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -174,6 +176,7 @@ function AkunSection({ userId }) {
     toast.success('Akun diperbarui');
     setEditingId(null);
     load();
+    refetch().catch(() => {});
   };
 
   const deactivate = async (id) => {
@@ -184,6 +187,7 @@ function AkunSection({ userId }) {
     if (error) { toast.error('Gagal menonaktifkan akun'); return; }
     toast.success('Akun dinonaktifkan');
     load();
+    refetch().catch(() => {});
   };
 
   const handleAdd = async () => {
@@ -198,6 +202,7 @@ function AkunSection({ userId }) {
     setShowAdd(false);
     setAddForm({ name: '', purpose: 'Living', sort_order: 99 });
     load();
+    refetch().catch(() => {});
   };
 
   if (loading) return <div className="settings-loading"><div className="loading-spinner" /></div>;
@@ -295,6 +300,7 @@ function AkunSection({ userId }) {
    Kelola Kategori
 ───────────────────────────────────────── */
 function KategoriSection({ userId }) {
+  const { refetch } = useData();
   const { fetchCategories } = useCategories();
   const [categories, setCategories] = useState([]);
   const [filter, setFilter] = useState('Expense');
@@ -332,6 +338,7 @@ function KategoriSection({ userId }) {
     toast.success('Kategori diperbarui');
     setEditingId(null);
     load();
+    refetch().catch(() => {});
   };
 
   const deactivate = async (id) => {
@@ -342,6 +349,7 @@ function KategoriSection({ userId }) {
     if (error) { toast.error('Gagal menonaktifkan kategori'); return; }
     toast.success('Kategori dinonaktifkan');
     load();
+    refetch().catch(() => {});
   };
 
   const handleAdd = async () => {
@@ -356,6 +364,7 @@ function KategoriSection({ userId }) {
     setShowAdd(false);
     setAddForm({ name: '', flow_type: 'Expense', sort_order: 99 });
     load();
+    refetch().catch(() => {});
   };
 
   const visible = categories.filter(c => c.flow_type === filter);
@@ -461,6 +470,7 @@ function KategoriSection({ userId }) {
    Budget
 ───────────────────────────────────────── */
 function BudgetSection({ userId }) {
+  const { refetch } = useData();
   const { fetchBudgets, upsertBudget, deleteBudget } = useBudgets();
   const { fetchCategories } = useCategories();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -524,6 +534,7 @@ function BudgetSection({ userId }) {
     toast.success('Budget disimpan');
     setSaving(false);
     loadBudgets();
+    refetch().catch(() => {});
   };
 
   const copyFromLastMonth = async () => {
