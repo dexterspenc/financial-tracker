@@ -9,7 +9,7 @@ import { toast } from '../components/ui/Toast';
 import './HistoryPage.css';
 
 function HistoryPage() {
-  const { allTransactions: transactions, loading, refetch } = useData();
+  const { allTransactions: transactions, categories, loading, refetch } = useData();
   const { deleteTransaction } = useTransactions();
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [filters, setFilters] = useState({
@@ -80,7 +80,9 @@ function HistoryPage() {
 
   const uniqueMonths = [...new Set(transactions.map(t => t.month?.substring(0, 7)))].filter(Boolean).sort().reverse();
   const uniqueAccounts = [...new Set(transactions.map(t => t.account))].filter(Boolean).sort();
-  const uniqueCategories = [...new Set(transactions.map(t => t.category))].filter(Boolean).sort();
+  const expenseCategories  = categories.filter(c => c.flow_type === 'Expense');
+  const incomeCategories   = categories.filter(c => c.flow_type === 'Income');
+  const transferCategories = categories.filter(c => c.flow_type === 'Transfer');
 
   return (
     <div className="history-page">
@@ -118,7 +120,21 @@ function HistoryPage() {
           className="filter-select"
         >
           <option value="all">All Categories</option>
-          {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          {expenseCategories.length > 0 && (
+            <optgroup label="Pengeluaran">
+              {expenseCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+            </optgroup>
+          )}
+          {incomeCategories.length > 0 && (
+            <optgroup label="Pemasukan">
+              {incomeCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+            </optgroup>
+          )}
+          {transferCategories.length > 0 && (
+            <optgroup label="Transfer">
+              {transferCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+            </optgroup>
+          )}
         </select>
 
         <input
