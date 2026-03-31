@@ -157,8 +157,8 @@ function HistoryPage() {
                         </div>
                         {txn.note && <div className="card-note">{txn.note}</div>}
                       </div>
-                      <div className={`card-amount ${txn.credit > 0 ? 'expense' : 'income'}`}>
-                        {txn.credit > 0 ? '-' : '+'} Rp {(txn.debit || txn.credit).toLocaleString('id-ID')}
+                      <div className={`card-amount ${txn.debit > 0 ? 'expense' : 'income'}`}>
+                        {txn.debit > 0 ? '-' : '+'} Rp {(txn.debit || txn.credit).toLocaleString('id-ID')}
                       </div>
                     </div>
                     <div className="card-actions">

@@ -16,8 +16,8 @@ function HomePage() {
     let monthExpense = 0;
     allTransactions.forEach(txn => {
       if (txn.month?.substring(0, 7) === currentMonth) {
-        if (txn.flowType === 'Income')  monthIncome  += txn.debit;
-        if (txn.flowType === 'Expense') monthExpense += txn.credit;
+        if (txn.flowType === 'Income')  monthIncome  += txn.credit;
+        if (txn.flowType === 'Expense') monthExpense += txn.debit;
       }
     });
     return {
@@ -118,8 +118,8 @@ function HomePage() {
 
             <div className="transaction-list">
               {stats.recentTransactions.map((txn) => {
-                const isIncome = txn.debit > 0 && txn.credit === 0;
-                const amount = txn.debit || txn.credit;
+                const isIncome = txn.credit > 0 && txn.debit === 0;
+                const amount = txn.credit || txn.debit;
                 return (
                   <div key={txn.id} className="transaction-card">
                     <div className="txn-main">

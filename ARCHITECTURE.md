@@ -37,8 +37,8 @@ month         date NOT NULL                  -- always yyyy-MM-01
 account_id    uuid REFERENCES accounts(id) NOT NULL
 category_id   uuid REFERENCES categories(id) NOT NULL
 flow_type     text NOT NULL                  -- 'Income' | 'Expense' | 'Transfer'
-debit         numeric(15,2) DEFAULT 0
-credit        numeric(15,2) DEFAULT 0
+debit         numeric(15,2) DEFAULT 0        -- Expense and Transfer-out
+credit        numeric(15,2) DEFAULT 0        -- Income and Transfer-in
 type          text DEFAULT 'Normal'          -- 'Normal' | 'Transfer'
 transfer_pair_id  text                       -- 'TRF-NNN' (kept for data migration compat)
 note          text

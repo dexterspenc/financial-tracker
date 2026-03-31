@@ -22,7 +22,7 @@ function EditModal({ transaction, onClose, onSuccess }) {
 
   useEffect(() => {
     if (!transaction) return;
-    const amount = transaction.debit > 0 ? transaction.debit : transaction.credit;
+    const amount = transaction.credit > 0 ? transaction.credit : transaction.debit;
     setFormData({
       date: format(new Date(transaction.date + 'T00:00:00'), 'yyyy-MM-dd'),
       accountId: transaction.accountId ?? '',
@@ -58,8 +58,8 @@ function EditModal({ transaction, onClose, onSuccess }) {
       const flowType = selectedCategory?.flow_type ?? formData.flowType;
 
       // For Transfer rows, preserve the original debit/credit direction
-      const isTransferDebit = flowType === 'Transfer' && transaction.debit > 0;
-      const isTransferCredit = flowType === 'Transfer' && transaction.credit > 0;
+      const isTransferDebit  = flowType === 'Transfer' && transaction.debit  > 0; // Transfer-out
+      const isTransferCredit = flowType === 'Transfer' && transaction.credit > 0; // Transfer-in
 
       const payload = {
         date: formData.date,
@@ -67,8 +67,8 @@ function EditModal({ transaction, onClose, onSuccess }) {
         account_id: formData.accountId,
         category_id: formData.categoryId,
         flow_type: flowType,
-        debit:  flowType === 'Income'  || isTransferDebit  ? amount : 0,
-        credit: flowType === 'Expense' || isTransferCredit ? amount : 0,
+        debit:  flowType === 'Expense' || isTransferDebit  ? amount : 0,
+        credit: flowType === 'Income'  || isTransferCredit ? amount : 0,
         note: formData.note || null,
       };
 

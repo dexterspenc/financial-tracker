@@ -185,13 +185,13 @@ function AnalyticsPage() {
     txns.forEach(txn => {
       const txnMonth = txn.month?.substring(0, 7);
       if (monthlyData[txnMonth]) {
-        if (txn.flowType === 'Income') monthlyData[txnMonth].income += txn.debit || 0;
-        if (txn.flowType === 'Expense') monthlyData[txnMonth].expense += txn.credit || 0;
+        if (txn.flowType === 'Income') monthlyData[txnMonth].income += txn.credit || 0;
+        if (txn.flowType === 'Expense') monthlyData[txnMonth].expense += txn.debit || 0;
       }
       if (txnMonth === selectedMonth && txn.date && txn.flowType === 'Expense') {
         const day = new Date(txn.date).getDate();
         const weekIndex = Math.floor((day - 1) / 7);
-        if (weekIndex < 5) weeklyData[weekIndex] += txn.credit || 0;
+        if (weekIndex < 5) weeklyData[weekIndex] += txn.debit || 0;
       }
     });
 
@@ -208,7 +208,7 @@ function AnalyticsPage() {
     const balances = { ...openingBalanceMap };
     txns.forEach(txn => {
       if (txn.account) {
-        balances[txn.account] = (balances[txn.account] || 0) + (txn.debit || 0) - (txn.credit || 0);
+        balances[txn.account] = (balances[txn.account] || 0) + (txn.credit || 0) - (txn.debit || 0);
       }
     });
 
@@ -219,14 +219,14 @@ function AnalyticsPage() {
     for (const txn of reversedTxns) {
       if (txn.type === 'Transfer' && txn.transferPairId && !seenPairs.has(txn.transferPairId)) {
         seenPairs.add(txn.transferPairId);
-        const creditRow = txns.find(t => t.transferPairId === txn.transferPairId && (t.credit || 0) > 0);
         const debitRow = txns.find(t => t.transferPairId === txn.transferPairId && (t.debit || 0) > 0);
+        const creditRow = txns.find(t => t.transferPairId === txn.transferPairId && (t.credit || 0) > 0);
         if (creditRow && debitRow) {
           allTransfers.push({
-            date: creditRow.date,
-            from: creditRow.account,
-            to: debitRow.account,
-            amount: creditRow.credit,
+            date: debitRow.date,
+            from: debitRow.account,
+            to: creditRow.account,
+            amount: debitRow.debit,
             note: creditRow.note,
             pairId: txn.transferPairId
           });
@@ -241,8 +241,8 @@ function AnalyticsPage() {
     txns.forEach(txn => {
       if (txn.month?.substring(0, 7) === month) {
         accountUsage[txn.account] = (accountUsage[txn.account] || 0) + 1;
-        if (txn.type === 'Transfer' && txn.transferPairId && (txn.credit || 0) > 0) {
-          const pair = txns.find(t => t.transferPairId === txn.transferPairId && (t.debit || 0) > 0);
+        if (txn.type === 'Transfer' && txn.transferPairId && (txn.debit || 0) > 0) {
+          const pair = txns.find(t => t.transferPairId === txn.transferPairId && (t.credit || 0) > 0);
           if (pair) {
             const route = `${txn.account} → ${pair.account}`;
             transferRoutes[route] = (transferRoutes[route] || 0) + 1;
