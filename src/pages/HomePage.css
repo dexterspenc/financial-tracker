@@ -174,26 +174,16 @@
   color: var(--text-primary);
 }
 
-.today-summary {
+.section-title-group {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .today-expense {
+  font-size: 0.75rem;
   color: var(--color-expense, #e53e3e);
   font-weight: 600;
-}
-
-.today-income {
-  color: var(--color-income, #38a169);
-  font-weight: 600;
-}
-
-.today-label {
-  color: var(--text-tertiary);
-  font-weight: 400;
 }
 
 .view-all-btn {

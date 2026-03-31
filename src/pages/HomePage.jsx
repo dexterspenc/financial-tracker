@@ -15,24 +15,24 @@ function HomePage() {
     const today = format(new Date(), 'yyyy-MM-dd');
     let monthIncome = 0;
     let monthExpense = 0;
-    let todayExpense = 0;
-    let todayIncome = 0;
     allTransactions.forEach(txn => {
       if (txn.month?.substring(0, 7) === currentMonth) {
         if (txn.flowType === 'Income')  monthIncome  += txn.credit;
         if (txn.flowType === 'Expense') monthExpense += txn.debit;
       }
-      if (txn.date === today) {
-        if (txn.flowType === 'Expense') todayExpense += txn.debit;
-        if (txn.flowType === 'Income')  todayIncome  += txn.credit;
-      }
     });
+    const todayTxns = allTransactions.filter(t => t.date === today);
+    const todayExpense = todayTxns
+      .filter(t => t.flowType === 'Expense')
+      .reduce((sum, t) => sum + t.debit, 0);
+    const hasTodayTxns = todayTxns.length > 0;
     return {
       netCashflow: monthIncome - monthExpense,
       monthIncome,
       monthExpense,
+      todayTxns,
       todayExpense,
-      todayIncome,
+      hasTodayTxns,
       recentTransactions: allTransactions.slice(0, 5),
     };
   }, [allTransactions]);
@@ -133,29 +133,21 @@ function HomePage() {
 
           <div className="recent-section">
             <div className="section-header">
-              <h2>Recent Transactions</h2>
-              {(stats.todayExpense > 0 || stats.todayIncome > 0) && (
-                <span className="today-summary">
-                  {stats.todayExpense > 0 && (
-                    <span className="today-expense">
-                      -{hideBalance ? '••••••' : `Rp ${stats.todayExpense.toLocaleString('id-ID')}`}
-                    </span>
-                  )}
-                  {stats.todayIncome > 0 && (
-                    <span className="today-income">
-                      +{hideBalance ? '••••••' : `Rp ${stats.todayIncome.toLocaleString('id-ID')}`}
-                    </span>
-                  )}
-                  <span className="today-label">hari ini</span>
-                </span>
-              )}
+              <div className="section-title-group">
+                <h2>{stats.hasTodayTxns ? 'Transaksi Hari Ini' : 'Transaksi Terbaru'}</h2>
+                {stats.hasTodayTxns && stats.todayExpense > 0 && (
+                  <span className="today-expense">
+                    -{hideBalance ? '••••••' : `Rp ${stats.todayExpense.toLocaleString('id-ID')}`}
+                  </span>
+                )}
+              </div>
               <button className="view-all-btn" onClick={() => navigate('/history')}>
                 View all →
               </button>
             </div>
 
             <div className="transaction-list">
-              {stats.recentTransactions.map((txn) => {
+              {(stats.hasTodayTxns ? stats.todayTxns : stats.recentTransactions).map((txn) => {
                 const isIncome = txn.credit > 0 && txn.debit === 0;
                 const amount = txn.credit || txn.debit;
                 return (
@@ -180,7 +172,7 @@ function HomePage() {
                   </div>
                 );
               })}
-              {stats.recentTransactions.length === 0 && (
+              {!stats.hasTodayTxns && stats.recentTransactions.length === 0 && (
                 <div className="empty-state">
                   <div className="empty-icon">📭</div>
                   <div className="empty-text">Belum ada transaksi</div>
