@@ -53,6 +53,7 @@ function TransactionForm() {
         await submitTransfer();
       }
     } catch (err) {
+      console.error('Transaction error:', err);
       toast.error('Gagal menambah transaksi');
     } finally {
       setLoading(false);
