@@ -120,26 +120,26 @@ function AnalyticsPage() {
 
       if (txnMonth === currentMonth) {
         if (flowType === 'Income') {
-          monthIncome += debit || 0;
+          monthIncome += credit || 0;
         }
         if (flowType === 'Expense') {
-          monthExpense += credit || 0;
+          monthExpense += debit || 0;
           if (category) {
-            expenseByCategory[category] = (expenseByCategory[category] || 0) + (credit || 0);
+            expenseByCategory[category] = (expenseByCategory[category] || 0) + (debit || 0);
             if (accountPurpose && !categoryPurposes[category]) {
               categoryPurposes[category] = accountPurpose;
             }
           }
-          expenseTransactions.push({ category, amount: credit || 0, note, date });
+          expenseTransactions.push({ category, amount: debit || 0, note, date });
         }
       }
 
       if (txnMonth === lastMonth && flowType === 'Expense') {
-        lastMonthExpense += credit || 0;
+        lastMonthExpense += debit || 0;
       }
 
       if (accountPurpose) {
-        accountBalances[accountPurpose] = (accountBalances[accountPurpose] || 0) + (debit || 0) - (credit || 0);
+        accountBalances[accountPurpose] = (accountBalances[accountPurpose] || 0) + (credit || 0) - (debit || 0);
       }
     });
 

@@ -72,8 +72,8 @@ function TransactionForm() {
       account_id: formData.accountId,
       category_id: formData.categoryId,
       flow_type: flowType,
-      debit: flowType === 'Income' ? amount : 0,
-      credit: flowType !== 'Income' ? amount : 0,
+      debit: flowType === 'Expense' ? amount : 0,
+      credit: flowType === 'Income' ? amount : 0,
       type: 'Normal',
       note: formData.note || null,
     };
@@ -90,7 +90,7 @@ function TransactionForm() {
     const month = format(new Date(formData.date + 'T00:00:00'), 'yyyy-MM-01');
     const amount = parseFloat(formData.amount) || 0;
 
-    // Row 1: Credit (money leaves source account)
+    // Row 1: Transfer-out (money leaves source account) → debit
     const debitRow = {
       user_id: user.id,
       date: formData.date,
@@ -98,13 +98,13 @@ function TransactionForm() {
       account_id: formData.fromAccountId,
       category_id: formData.categoryId,
       flow_type: 'Transfer',
-      debit: 0,
-      credit: amount,
+      debit: amount,
+      credit: 0,
       type: 'Transfer',
       note: formData.note || null,
     };
 
-    // Row 2: Debit (money arrives at destination account)
+    // Row 2: Transfer-in (money arrives at destination account) → credit
     const creditRow = {
       user_id: user.id,
       date: formData.date,
@@ -112,8 +112,8 @@ function TransactionForm() {
       account_id: formData.toAccountId,
       category_id: formData.categoryId,
       flow_type: 'Transfer',
-      debit: amount,
-      credit: 0,
+      debit: 0,
+      credit: amount,
       type: 'Transfer',
       note: formData.note || null,
     };
