@@ -12,18 +12,27 @@ function HomePage() {
 
   const stats = useMemo(() => {
     const currentMonth = format(new Date(), 'yyyy-MM');
+    const today = format(new Date(), 'yyyy-MM-dd');
     let monthIncome = 0;
     let monthExpense = 0;
+    let todayExpense = 0;
+    let todayIncome = 0;
     allTransactions.forEach(txn => {
       if (txn.month?.substring(0, 7) === currentMonth) {
         if (txn.flowType === 'Income')  monthIncome  += txn.credit;
         if (txn.flowType === 'Expense') monthExpense += txn.debit;
+      }
+      if (txn.date === today) {
+        if (txn.flowType === 'Expense') todayExpense += txn.debit;
+        if (txn.flowType === 'Income')  todayIncome  += txn.credit;
       }
     });
     return {
       netCashflow: monthIncome - monthExpense,
       monthIncome,
       monthExpense,
+      todayExpense,
+      todayIncome,
       recentTransactions: allTransactions.slice(0, 5),
     };
   }, [allTransactions]);
@@ -125,6 +134,21 @@ function HomePage() {
           <div className="recent-section">
             <div className="section-header">
               <h2>Recent Transactions</h2>
+              {(stats.todayExpense > 0 || stats.todayIncome > 0) && (
+                <span className="today-summary">
+                  {stats.todayExpense > 0 && (
+                    <span className="today-expense">
+                      -{hideBalance ? '••••••' : `Rp ${stats.todayExpense.toLocaleString('id-ID')}`}
+                    </span>
+                  )}
+                  {stats.todayIncome > 0 && (
+                    <span className="today-income">
+                      +{hideBalance ? '••••••' : `Rp ${stats.todayIncome.toLocaleString('id-ID')}`}
+                    </span>
+                  )}
+                  <span className="today-label">hari ini</span>
+                </span>
+              )}
               <button className="view-all-btn" onClick={() => navigate('/history')}>
                 View all →
               </button>
