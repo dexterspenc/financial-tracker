@@ -213,7 +213,7 @@ function AnalyticsPage() {
     });
 
     // Recent transfers (last 10 pairs)
-    const reversedTxns = [...txns].reverse();
+    const reversedTxns = txns;
     const seenPairs = new Set();
     const allTransfers = [];
     for (const txn of reversedTxns) {
