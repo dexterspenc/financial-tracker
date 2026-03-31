@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { normalizeTxn } from '../utils/normalizeTxn';
 export { normalizeTxn } from '../utils/normalizeTxn';
 
 const SELECT_WITH_JOINS = '*, accounts(id, name, purpose), categories(id, name, flow_type)';
