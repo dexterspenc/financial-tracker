@@ -176,43 +176,43 @@
 
 .today-summary-card {
   display: flex;
-  align-items: center;
-  background: var(--surface-card);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
+  gap: 10px;
   margin-bottom: 10px;
-  box-shadow: var(--shadow-xs);
 }
 
 .today-summary-col {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.today-summary-col.income {
+  background: #F0FFF4;
+  border: 1px solid #C6F6D5;
+}
+
+.today-summary-col.expense {
+  background: #FFF5F5;
+  border: 1px solid #FED7D7;
 }
 
 .today-summary-label {
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
+  font-size: 11px;
+  color: #718096;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.5px;
 }
 
 .today-summary-amount {
-  font-size: 0.9rem;
+  font-size: 18px;
   font-weight: 700;
 }
 
 .today-summary-amount.expense { color: var(--color-expense, #e53e3e); }
 .today-summary-amount.income  { color: var(--color-income,  #38a169); }
-
-.today-summary-divider {
-  width: 1px;
-  height: 32px;
-  background: var(--border-subtle, #e2e8f0);
-  margin: 0 16px;
-}
 
 .view-all-btn {
   font-size: 0.8rem;

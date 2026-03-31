@@ -145,17 +145,16 @@ function HomePage() {
 
             {stats.hasTodayTxns && (
               <div className="today-summary-card">
-                <div className="today-summary-col">
-                  <span className="today-summary-label">Pengeluaran</span>
-                  <span className="today-summary-amount expense">
-                    -{hideBalance ? '••••••' : `Rp ${stats.todayExpense.toLocaleString('id-ID')}`}
-                  </span>
-                </div>
-                <div className="today-summary-divider" />
-                <div className="today-summary-col">
-                  <span className="today-summary-label">Pemasukan</span>
+                <div className="today-summary-col income">
+                  <span className="today-summary-label">PEMASUKAN</span>
                   <span className="today-summary-amount income">
                     +{hideBalance ? '••••••' : `Rp ${stats.todayIncome.toLocaleString('id-ID')}`}
+                  </span>
+                </div>
+                <div className="today-summary-col expense">
+                  <span className="today-summary-label">PENGELUARAN</span>
+                  <span className="today-summary-amount expense">
+                    -{hideBalance ? '••••••' : `Rp ${stats.todayExpense.toLocaleString('id-ID')}`}
                   </span>
                 </div>
               </div>
