@@ -82,8 +82,8 @@ function TransactionForm() {
     if (error) throw error;
 
     toast.success('Transaksi berhasil ditambahkan!');
-    refetch();
     setFormData({ ...EMPTY_FORM, date: formData.date });
+    refetch().catch(() => {});
   };
 
   const submitTransfer = async () => {
@@ -133,8 +133,8 @@ function TransactionForm() {
     }
 
     toast.success('Transfer berhasil dibuat!');
-    refetch();
     setFormData({ ...EMPTY_FORM, date: formData.date });
+    refetch().catch(() => {});
   };
 
   // Group accounts by purpose for <optgroup> rendering
