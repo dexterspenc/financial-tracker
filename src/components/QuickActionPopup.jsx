@@ -69,48 +69,52 @@ function QuickActionPopup({ action, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="qa-form">
+        <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
 
-          <div className="qa-field">
-            <label>Akun</label>
-            <select value={accountId} onChange={e => setAccountId(e.target.value)} required>
-              <option value="">Pilih Akun</option>
-              {Object.entries(accountsByPurpose).map(([purpose, accs]) => (
-                <optgroup key={purpose} label={purpose}>
-                  {accs.map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+          <div className="qa-body">
+            <div className="qa-field">
+              <label>Akun</label>
+              <select value={accountId} onChange={e => setAccountId(e.target.value)} required>
+                <option value="">Pilih Akun</option>
+                {Object.entries(accountsByPurpose).map(([purpose, accs]) => (
+                  <optgroup key={purpose} label={purpose}>
+                    {accs.map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            <div className="qa-field">
+              <label>Jumlah (Rp)</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="0"
+                min="1"
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="qa-field" style={{ paddingBottom: '4px' }}>
+              <label>Catatan <span className="qa-opt">(opsional)</span></label>
+              <input
+                type="text"
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="Tambah catatan…"
+              />
+            </div>
           </div>
 
-          <div className="qa-field">
-            <label>Jumlah (Rp)</label>
-            <input
-              type="number"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              placeholder="0"
-              min="1"
-              required
-              autoFocus
-            />
+          <div className="qa-footer">
+            <button type="submit" className="btn btn-primary qa-submit" disabled={saving}>
+              {saving ? <span className="spinner" /> : 'Tambah Transaksi'}
+            </button>
           </div>
-
-          <div className="qa-field">
-            <label>Catatan <span className="qa-opt">(opsional)</span></label>
-            <input
-              type="text"
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              placeholder="Tambah catatan…"
-            />
-          </div>
-
-          <button type="submit" className="btn btn-primary qa-submit" disabled={saving}>
-            {saving ? <span className="spinner" /> : 'Simpan Transaksi'}
-          </button>
 
         </form>
       </div>

@@ -40,14 +40,15 @@
 }
 
 .quick-slot-filled {
-  background: var(--brand-50);
-  border-color: var(--brand-200);
-  color: var(--brand-700);
+  background: var(--surface-card);
+  border-color: var(--border-default);
+  color: var(--text-primary);
 }
 
 .quick-slot-filled:hover {
-  background: var(--brand-100);
+  background: var(--brand-50);
   border-color: var(--brand-400);
+  color: var(--brand-700);
 }
 
 .quick-slot-empty {
