@@ -349,7 +349,7 @@ function TransactionForm() {
                     className="quick-slot quick-slot-filled"
                     onClick={() => setActiveQuickAction(action)}
                   >
-                    {cat.name}
+                    <span className="qa-slot-icon">⚡</span>{cat.name}
                   </button>
                 ) : (
                   <button

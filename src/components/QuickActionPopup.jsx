@@ -69,7 +69,7 @@ function QuickActionPopup({ action, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
+        <form onSubmit={handleSubmit} className="qa-form">
 
           <div className="qa-body">
             <div className="qa-field">
