@@ -313,6 +313,10 @@ function OnboardingPage() {
                 <p>Pilih semua akun bank, dompet digital, atau tunai yang kamu gunakan</p>
               </div>
 
+              <div style={{ background: '#EFF6FF', borderLeft: '3px solid #3B82F6', padding: '10px 12px', fontSize: '12px', color: '#1E40AF', borderRadius: '4px', marginBottom: '16px' }}>
+                💡 Tips: Pisahkan akun berdasarkan tujuannya — misalnya BCA untuk kebutuhan sehari-hari (Living), Mandiri untuk hiburan (Playing), dan Blu untuk tabungan (Saving). Ini membantu kamu tahu uang kamu pergi ke mana.
+              </div>
+
               <div className="ob-account-grid">
                 {PRESET_ACCOUNTS.map(preset => {
                   const selAcc  = selectedAccounts.find(a => a.name === preset.name);
