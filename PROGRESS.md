@@ -1,6 +1,6 @@
 # PROGRESS.md — SaaS Rebuild Progress Log
 
-Last updated: 2026-03-27 (Session 8 — Bug fixes, DataContext, account balance)
+Last updated: 2026-04-01 (Session 9 — Migration, debit/credit fix, History grouping, Transaksi Hari Ini)
 
 ---
 
@@ -195,13 +195,31 @@ Last updated: 2026-03-27 (Session 8 — Bug fixes, DataContext, account balance)
 **Onboarding:**
 - ✅ First real user completed onboarding successfully — wizard confirmed working end-to-end
 
+### P8 — Session 9: Migration, Debit/Credit Fix, UI Features (2026-04-01)
+
+**Data migration:**
+- ✅ 363 transaksi dari Google Sheets dimigrasi ke Supabase via CSV import script (`scripts/`)
+- ✅ Fix `type=Transfer` — migrasi menyertakan nilai `type` yang benar untuk baris Transfer
+- ✅ Fix debit/credit convention di semua file — konvensi SaaS: Income→credit, Expense→debit (kebalikan dari Google Sheets; ARCHITECTURE.md dan semua hooks/pages sudah disesuaikan)
+
+**Bug fixes:**
+- ✅ Fix cashflow minus display — nilai cashflow negatif kini tampil dengan tanda `-` di HomePage summary cards
+- ✅ Fix radio button spacing — spacing pada komponen radio button/pill diperbaiki
+- ✅ Session expiry check — AuthContext mendeteksi sesi expired dan redirect ke `/login`
+- ✅ `refetch()` di Settings — SettingsPage kini panggil `refetch()` setelah add/edit/delete akun dan kategori (sudah ada di EditModal dan TransactionForm sejak P7)
+
+**UI features:**
+- ✅ History filter kategori grouped — HistoryPage filter kategori kini ditampilkan per grup (Pengeluaran / Pemasukan / Transfer)
+- ✅ Transaksi Hari Ini section di Home — HomePage menampilkan section khusus transaksi hari ini di atas daftar transaksi terkini
+- ✅ Logout button di Onboarding — tombol "Ganti Akun" ditambahkan di OnboardingPage untuk memudahkan ganti akun tanpa harus navigasi ke Settings
+- ✅ Onboarding hint tooltip — hint tips pemilihan akun berdasarkan tujuan ditambahkan di Step 1 onboarding
+
 ---
 
 ## Known Bugs / In Progress
 
 - ⚠️ **Transfer form: tidak ada kategori selector** — saat mode Transfer, user tidak bisa memilih kategori spesifik (Topup, Tabungan, dll); form langsung pakai kategori 'Transfer' default
-- ⚠️ **Net cashflow minus tidak tampil tanda minus** — `HomePage.jsx`: nilai cashflow negatif tidak diformat dengan tanda `-`; perlu cek logika display di summary cards
-- ⚠️ **UI polish masih diperlukan** — beberapa halaman (Onboarding, Settings) perlu review visual di mobile: spacing, font size, loading states
+- ⚠️ **ARCHITECTURE.md perlu update lanjutan** — konvensi debit/credit sudah berubah dari Google Sheets (Income=Debit, Expense=Credit) ke SaaS (Income=credit, Expense=debit); schema SQL sudah benar tapi CLAUDE.md Google Sheet Column Map masih pakai konvensi lama sebagai referensi historis
 
 ---
 
@@ -217,7 +235,10 @@ Last updated: 2026-03-27 (Session 8 — Bug fixes, DataContext, account balance)
 ## Remaining Work
 
 ### 🟡 Nice to Have
+- **UI Polish mobile** — Onboarding dan Settings masih perlu review visual di mobile: spacing, font size, loading states
+- **Dark mode** — belum diimplementasikan; CSS tokens sudah siap untuk extension
 - **PWA setup** — manifest + service worker + offline fallback (belum dikerjakan)
+- **Calendar view** — tampilan transaksi dalam format kalender per bulan (future)
+- **Credit card account support** — jenis akun kartu kredit dengan logika saldo berbeda (future)
 - **Custom domain** — belum dikonfigurasi di Vercel
-- **Data migration** — tools untuk import data dari Google Sheets ke Supabase (untuk existing user)
 - **Admin dashboard** — monitoring users dan usage (future)
