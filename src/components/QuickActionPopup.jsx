@@ -25,10 +25,10 @@ function QuickActionPopup({ action, onClose }) {
   const [note, setNote]           = useState('');
   const [saving, setSaving]       = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) { toast.error('Masukkan jumlah yang valid'); return; }
+    if (!accountId)       { toast.error('Pilih akun terlebih dahulu'); return; }
     setSaving(true);
     try {
       const today    = format(new Date(), 'yyyy-MM-dd');
@@ -69,54 +69,55 @@ function QuickActionPopup({ action, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="qa-form">
-
-          <div className="qa-body">
-            <div className="qa-field">
-              <label>Akun</label>
-              <select value={accountId} onChange={e => setAccountId(e.target.value)} required>
-                <option value="">Pilih Akun</option>
-                {Object.entries(accountsByPurpose).map(([purpose, accs]) => (
-                  <optgroup key={purpose} label={purpose}>
-                    {accs.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-
-            <div className="qa-field">
-              <label>Jumlah (Rp)</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                placeholder="0"
-                min="1"
-                required
-                autoFocus
-              />
-            </div>
-
-            <div className="qa-field" style={{ paddingBottom: '4px' }}>
-              <label>Catatan <span className="qa-opt">(opsional)</span></label>
-              <input
-                type="text"
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder="Tambah catatan…"
-              />
-            </div>
+        <div className="qa-body">
+          <div className="qa-field">
+            <label>Akun</label>
+            <select value={accountId} onChange={e => setAccountId(e.target.value)}>
+              <option value="">Pilih Akun</option>
+              {Object.entries(accountsByPurpose).map(([purpose, accs]) => (
+                <optgroup key={purpose} label={purpose}>
+                  {accs.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
 
-          <div className="qa-footer">
-            <button type="submit" className="btn btn-primary qa-submit" disabled={saving}>
-              {saving ? <span className="spinner" /> : 'Tambah Transaksi'}
-            </button>
+          <div className="qa-field">
+            <label>Jumlah (Rp)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="0"
+              min="1"
+              autoFocus
+            />
           </div>
 
-        </form>
+          <div className="qa-field">
+            <label>Catatan <span className="qa-opt">(opsional)</span></label>
+            <input
+              type="text"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Tambah catatan…"
+            />
+          </div>
+        </div>
+
+        <div className="qa-footer">
+          <button
+            type="button"
+            className="btn btn-primary qa-submit"
+            onClick={handleSubmit}
+            disabled={saving}
+          >
+            {saving ? <span className="spinner" /> : 'Tambah Transaksi'}
+          </button>
+        </div>
+
       </div>
     </div>
   );
