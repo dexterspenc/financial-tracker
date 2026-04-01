@@ -6,6 +6,7 @@ import { normalizeTxn } from '../utils/normalizeTxn';
 const DataContext = createContext(null);
 
 const SELECT_TXN = '*, accounts(id, name, purpose), categories(id, name, flow_type)';
+const EMPTY_QUICK_ACTIONS = [null, null, null, null];
 
 // Fetch functions defined at module scope — no hook factory imports, no TDZ risk
 const fetchAllData = async (userId) => {
@@ -14,6 +15,7 @@ const fetchAllData = async (userId) => {
     { data: accs },
     { data: cats },
     { data: bals },
+    { data: settings },
   ] = await Promise.all([
     supabase
       .from('transactions')
@@ -37,12 +39,24 @@ const fetchAllData = async (userId) => {
       .from('account_balances')
       .select('*, accounts(id, name, purpose)')
       .eq('user_id', userId),
+    supabase
+      .from('user_settings')
+      .select('quick_actions')
+      .eq('user_id', userId)
+      .single(),
   ]);
+
+  const rawQA = settings?.quick_actions;
+  const quickActions = Array.isArray(rawQA) && rawQA.length === 4
+    ? rawQA
+    : EMPTY_QUICK_ACTIONS;
+
   return {
-    txns: txns ? txns.map(normalizeTxn) : [],
-    accs: accs ?? [],
-    cats: cats ?? [],
-    bals: bals ?? [],
+    txns:         txns ? txns.map(normalizeTxn) : [],
+    accs:         accs ?? [],
+    cats:         cats ?? [],
+    bals:         bals ?? [],
+    quickActions,
   };
 };
 
@@ -53,6 +67,7 @@ export function DataProvider({ children }) {
   const [accounts, setAccounts]               = useState([]);
   const [categories, setCategories]           = useState([]);
   const [accountBalances, setAccountBalances] = useState([]);
+  const [quickActions, setQuickActions]       = useState(EMPTY_QUICK_ACTIONS);
   const [loading, setLoading]                 = useState(false);
   const [fetchTrigger, setFetchTrigger]       = useState(0);
 
@@ -62,6 +77,7 @@ export function DataProvider({ children }) {
       setAccounts([]);
       setCategories([]);
       setAccountBalances([]);
+      setQuickActions(EMPTY_QUICK_ACTIONS);
       return;
     }
 
@@ -69,12 +85,13 @@ export function DataProvider({ children }) {
     const run = async () => {
       setLoading(true);
       try {
-        const { txns, accs, cats, bals } = await fetchAllData(user.id);
+        const { txns, accs, cats, bals, quickActions: qa } = await fetchAllData(user.id);
         if (!cancelled) {
           setAllTransactions(txns);
           setAccounts(accs);
           setCategories(cats);
           setAccountBalances(bals);
+          setQuickActions(qa);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -88,7 +105,7 @@ export function DataProvider({ children }) {
   const refetch = () => setFetchTrigger(t => t + 1);
 
   return (
-    <DataContext.Provider value={{ allTransactions, accounts, categories, accountBalances, loading, refetch }}>
+    <DataContext.Provider value={{ allTransactions, accounts, categories, accountBalances, quickActions, loading, refetch }}>
       {children}
     </DataContext.Provider>
   );

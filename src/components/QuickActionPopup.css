@@ -1,0 +1,115 @@
+/* ── QuickActionPopup — bottom sheet modal ─────────────────────── */
+
+.qa-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: qa-fade 0.15s ease;
+}
+
+@keyframes qa-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.qa-sheet {
+  background: var(--surface-card);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 20px 20px 36px;
+  animation: qa-slide 0.2s ease;
+}
+
+@keyframes qa-slide {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* ── Header ── */
+.qa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.qa-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.qa-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--surface-page);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.qa-close:hover {
+  background: var(--border-default);
+  color: var(--text-primary);
+}
+
+/* ── Form ── */
+.qa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qa-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.qa-opt {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.qa-field select,
+.qa-field input[type="number"],
+.qa-field input[type="text"] {
+  padding: 10px 12px;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface-card);
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.qa-field select:focus,
+.qa-field input:focus {
+  outline: none;
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.qa-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}

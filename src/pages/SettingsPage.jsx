@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, subMonths } from 'date-fns';
-import { User, Wallet, Tag, PiggyBank, LogOut, Plus, Pencil, Trash2, Check, X, ChevronLeft } from 'lucide-react';
+import { User, Wallet, Tag, PiggyBank, LogOut, Plus, Pencil, Trash2, Check, X, ChevronLeft, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { useAccounts } from '../hooks/useAccounts';
@@ -13,10 +13,11 @@ import './SettingsPage.css';
 
 const PURPOSES = ['Living', 'Playing', 'Saving', 'Investment'];
 const TABS = [
-  { id: 'profil',    label: 'Profil',          Icon: User      },
-  { id: 'akun',      label: 'Kelola Akun',      Icon: Wallet    },
-  { id: 'kategori',  label: 'Kelola Kategori',  Icon: Tag       },
-  { id: 'budget',    label: 'Budget',           Icon: PiggyBank },
+  { id: 'profil',         label: 'Profil',          Icon: User      },
+  { id: 'akun',           label: 'Kelola Akun',      Icon: Wallet    },
+  { id: 'kategori',       label: 'Kelola Kategori',  Icon: Tag       },
+  { id: 'budget',         label: 'Budget',           Icon: PiggyBank },
+  { id: 'quick-actions',  label: 'Quick Actions',    Icon: Zap       },
 ];
 
 function SettingsPage() {
@@ -50,10 +51,11 @@ function SettingsPage() {
       </div>
 
       <div className="settings-content">
-        {activeTab === 'profil'   && <ProfilSection user={user} signOut={signOut} navigate={navigate} />}
-        {activeTab === 'akun'     && <AkunSection userId={user?.id} />}
-        {activeTab === 'kategori' && <KategoriSection userId={user?.id} />}
-        {activeTab === 'budget'   && <BudgetSection userId={user?.id} />}
+        {activeTab === 'profil'        && <ProfilSection user={user} signOut={signOut} navigate={navigate} />}
+        {activeTab === 'akun'          && <AkunSection userId={user?.id} />}
+        {activeTab === 'kategori'      && <KategoriSection userId={user?.id} />}
+        {activeTab === 'budget'        && <BudgetSection userId={user?.id} />}
+        {activeTab === 'quick-actions' && <QuickActionsSection userId={user?.id} />}
       </div>
     </div>
   );
@@ -606,6 +608,187 @@ function BudgetSection({ userId }) {
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
             {saving ? <span className="spinner" /> : 'Simpan Budget'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   Quick Actions
+───────────────────────────────────────── */
+function QuickActionsSection({ userId }) {
+  const { accounts, categories, refetch } = useData();
+  const [slots, setSlots]           = useState([null, null, null, null]);
+  const [loading, setLoading]       = useState(true);
+  const [editingSlot, setEditingSlot] = useState(null); // null | 0–3
+  const [editForm, setEditForm]     = useState({ category_id: '', default_account_id: '' });
+  const [saving, setSaving]         = useState(false);
+
+  useEffect(() => { load(); }, [userId]);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('user_settings')
+      .select('quick_actions')
+      .eq('user_id', userId)
+      .single();
+    const raw = data?.quick_actions;
+    setSlots(Array.isArray(raw) && raw.length === 4 ? raw : [null, null, null, null]);
+    setLoading(false);
+  };
+
+  const persistSlots = async (newSlots) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({ user_id: userId, quick_actions: newSlots }, { onConflict: 'user_id' });
+    setSaving(false);
+    if (error) { toast.error('Gagal menyimpan'); return false; }
+    return true;
+  };
+
+  const handleSaveSlot = async () => {
+    if (!editForm.category_id)        { toast.error('Pilih kategori'); return; }
+    if (!editForm.default_account_id) { toast.error('Pilih akun default'); return; }
+    const newSlots = [...slots];
+    newSlots[editingSlot] = {
+      category_id:        editForm.category_id,
+      default_account_id: editForm.default_account_id,
+    };
+    if (await persistSlots(newSlots)) {
+      setSlots(newSlots);
+      setEditingSlot(null);
+      toast.success('Quick Action disimpan');
+      refetch().catch(() => {});
+    }
+  };
+
+  const handleDeleteSlot = async (idx) => {
+    const newSlots = [...slots];
+    newSlots[idx] = null;
+    if (await persistSlots(newSlots)) {
+      setSlots(newSlots);
+      toast.success('Quick Action dihapus');
+      refetch().catch(() => {});
+    }
+  };
+
+  const startEdit = (idx) => {
+    const slot = slots[idx];
+    setEditForm({
+      category_id:        slot?.category_id        ?? '',
+      default_account_id: slot?.default_account_id ?? '',
+    });
+    setEditingSlot(idx);
+  };
+
+  const expenseCategories  = categories.filter(c => c.flow_type === 'Expense');
+  const incomeCategories   = categories.filter(c => c.flow_type === 'Income');
+  const transferCategories = categories.filter(c => c.flow_type === 'Transfer');
+
+  const accountsByPurpose = accounts.reduce((groups, acc) => {
+    if (!groups[acc.purpose]) groups[acc.purpose] = [];
+    groups[acc.purpose].push(acc);
+    return groups;
+  }, {});
+
+  const getCategoryName = (id) => categories.find(c => c.id === id)?.name ?? '—';
+  const getAccountName  = (id) => accounts.find(a => a.id === id)?.name ?? '—';
+
+  if (loading) return <div className="settings-loading"><div className="loading-spinner" /></div>;
+
+  return (
+    <div className="settings-section">
+      <div className="settings-card">
+        <h2>Quick Actions</h2>
+        <p className="settings-helper">
+          Konfigurasi 4 tombol pintasan di halaman tambah transaksi.
+          Tiap slot berisi kategori dan akun default yang langsung dipakai saat tombol ditekan.
+        </p>
+
+        <div className="settings-list">
+          {slots.map((slot, idx) => (
+            <div key={idx} className="settings-list-item">
+
+              {editingSlot === idx ? (
+                <div className="qa-settings-edit">
+                  <div className="qa-settings-row">
+                    <label>Kategori</label>
+                    <select
+                      className="settings-select"
+                      value={editForm.category_id}
+                      onChange={e => setEditForm({ ...editForm, category_id: e.target.value })}
+                    >
+                      <option value="">Pilih Kategori</option>
+                      {expenseCategories.length > 0 && (
+                        <optgroup label="Pengeluaran">
+                          {expenseCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </optgroup>
+                      )}
+                      {incomeCategories.length > 0 && (
+                        <optgroup label="Pemasukan">
+                          {incomeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </optgroup>
+                      )}
+                      {transferCategories.length > 0 && (
+                        <optgroup label="Transfer">
+                          {transferCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </optgroup>
+                      )}
+                    </select>
+                  </div>
+                  <div className="qa-settings-row">
+                    <label>Akun Default</label>
+                    <select
+                      className="settings-select"
+                      value={editForm.default_account_id}
+                      onChange={e => setEditForm({ ...editForm, default_account_id: e.target.value })}
+                    >
+                      <option value="">Pilih Akun</option>
+                      {Object.entries(accountsByPurpose).map(([purpose, accs]) => (
+                        <optgroup key={purpose} label={purpose}>
+                          {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="settings-add-actions">
+                    <button className="btn btn-sm btn-primary" onClick={handleSaveSlot} disabled={saving}>
+                      {saving ? <span className="spinner" /> : <><Check size={13} /> Simpan</>}
+                    </button>
+                    <button className="btn btn-sm btn-secondary" onClick={() => setEditingSlot(null)}>
+                      <X size={13} /> Batal
+                    </button>
+                  </div>
+                </div>
+
+              ) : slot ? (
+                <>
+                  <div className="settings-item-info">
+                    <div className="settings-item-name">{getCategoryName(slot.category_id)}</div>
+                    <div className="settings-item-sub">Akun: {getAccountName(slot.default_account_id)}</div>
+                  </div>
+                  <div className="settings-item-actions">
+                    <button className="icon-btn" onClick={() => startEdit(idx)}>
+                      <Pencil size={14} />
+                    </button>
+                    <button className="icon-btn icon-btn-danger" onClick={() => handleDeleteSlot(idx)}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </>
+
+              ) : (
+                <button type="button" className="qa-add-slot-btn" onClick={() => startEdit(idx)}>
+                  <Plus size={14} />
+                  Tambah Slot {idx + 1}
+                </button>
+              )}
+
+            </div>
+          ))}
         </div>
       </div>
     </div>

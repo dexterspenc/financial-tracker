@@ -15,3 +15,49 @@
     gap: 12px;
   }
 }
+
+/* ─── Quick Actions 2×2 grid ────────────────────────────── */
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.quick-slot {
+  padding: 10px 8px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  border: 1.5px solid;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 44px;
+}
+
+.quick-slot-filled {
+  background: var(--brand-50);
+  border-color: var(--brand-200);
+  color: var(--brand-700);
+}
+
+.quick-slot-filled:hover {
+  background: var(--brand-100);
+  border-color: var(--brand-400);
+}
+
+.quick-slot-empty {
+  background: var(--surface-page);
+  border-color: var(--border-default);
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.quick-slot-empty:hover {
+  border-color: var(--brand-300);
+  color: var(--brand-600);
+}

@@ -417,3 +417,43 @@
   padding: 6px 12px;
   font-size: 0.82rem;
 }
+
+/* ── Quick Actions settings ── */
+.qa-settings-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  padding: 4px 0;
+}
+
+.qa-settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qa-settings-row label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.qa-add-slot-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+
+.qa-add-slot-btn:hover {
+  color: var(--brand-600);
+}

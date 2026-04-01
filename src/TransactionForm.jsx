@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import './TransactionForm.css';
 import { ArrowDown } from 'lucide-react';
@@ -7,6 +8,7 @@ import { useTransactions } from './hooks/useTransactions';
 import { useData } from './contexts/DataContext';
 import { supabase } from './lib/supabase';
 import { toast } from './components/ui/Toast';
+import QuickActionPopup from './components/QuickActionPopup';
 
 const EMPTY_FORM = {
   date: format(new Date(), 'yyyy-MM-dd'),
@@ -21,12 +23,14 @@ const EMPTY_FORM = {
 
 function TransactionForm() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { addTransaction, addTransactionPair } = useTransactions();
-  const { accounts, categories, loading: dataLoading, refetch } = useData();
+  const { accounts, categories, quickActions, loading: dataLoading, refetch } = useData();
 
   const [mode, setMode] = useState('normal');
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
+  const [activeQuickAction, setActiveQuickAction] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -149,25 +153,6 @@ function TransactionForm() {
   const incomeCategories    = categories.filter(c => c.flow_type === 'Income');
   const expenseCategories   = categories.filter(c => c.flow_type === 'Expense');
   const transferCategories  = categories.filter(c => c.flow_type === 'Transfer');
-
-  const quickButtons = [
-    { label: '🍽️ Lunch',    categoryName: 'Daily Needs', accountName: 'BCA',  flowType: 'Expense' },
-    { label: '❤️ Dating',   categoryName: 'Dating',      accountName: 'BCA',  flowType: 'Expense' },
-    { label: '🚗 Transport', categoryName: 'Transport',   accountName: 'Cash', flowType: 'Expense' },
-    { label: '🛒 Shopping',  categoryName: 'Shopping',    accountName: 'BCA',  flowType: 'Expense' },
-  ];
-
-  const applyQuickButton = (preset) => {
-    const matchedAccount  = accounts.find(a => a.name === preset.accountName);
-    const matchedCategory = categories.find(c => c.name === preset.categoryName);
-    setMode('normal');
-    setFormData(prev => ({
-      ...prev,
-      accountId:  matchedAccount?.id  ?? '',
-      categoryId: matchedCategory?.id ?? '',
-      flowType:   preset.flowType,
-    }));
-  };
 
   if (dataLoading) {
     return (
@@ -353,18 +338,30 @@ function TransactionForm() {
 
         {mode === 'normal' && (
           <div className="quick-buttons">
-            <p className="quick-label">Quick Actions:</p>
-            <div className="button-grid">
-              {quickButtons.map((btn, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  className="quick-btn"
-                  onClick={() => applyQuickButton(btn)}
-                >
-                  {btn.label}
-                </button>
-              ))}
+            <p className="quick-label">Quick Actions</p>
+            <div className="quick-actions-grid">
+              {(quickActions ?? [null, null, null, null]).map((action, idx) => {
+                const cat = action ? categories.find(c => c.id === action.category_id) : null;
+                return cat ? (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="quick-slot quick-slot-filled"
+                    onClick={() => setActiveQuickAction(action)}
+                  >
+                    {cat.name}
+                  </button>
+                ) : (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="quick-slot quick-slot-empty"
+                    onClick={() => navigate('/settings?tab=quick-actions')}
+                  >
+                    + Tambah
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -377,6 +374,13 @@ function TransactionForm() {
           {loading ? '⏳ Menyimpan...' : mode === 'transfer' ? '🔄 Create Transfer' : '✨ Add Transaction'}
         </button>
       </form>
+
+      {activeQuickAction && (
+        <QuickActionPopup
+          action={activeQuickAction}
+          onClose={() => setActiveQuickAction(null)}
+        />
+      )}
     </div>
   );
 }
