@@ -13,7 +13,7 @@
   to   { opacity: 1; }
 }
 
-/* Sheet: always a bottom sheet anchored via position:fixed */
+/* ── Mobile default: bottom sheet ── */
 .qa-sheet {
   position: fixed;
   bottom: 0;
@@ -32,10 +32,29 @@
   to   { transform: translateY(0); }
 }
 
-/* Header — never scrolls */
+/* ── Desktop: centered modal ── */
+@media (min-width: 768px) {
+  .qa-sheet {
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: 420px;
+    border-radius: 12px;
+    animation: qa-pop 0.18s ease;
+  }
+
+  @keyframes qa-pop {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+}
+
+/* ── Header — never scrolls ── */
 .qa-header {
   flex-shrink: 0;
-  padding: 16px 16px 14px;
+  padding: 16px;
   border-bottom: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
@@ -68,7 +87,7 @@
   color: var(--text-primary);
 }
 
-/* Body — scrolls if content overflows */
+/* ── Body — scrollable ── */
 .qa-body {
   flex: 1;
   overflow-y: auto;
@@ -116,10 +135,10 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-/* Footer — never scrolls, submit always visible */
+/* ── Footer — never scrolls, submit always visible ── */
 .qa-footer {
   flex-shrink: 0;
-  padding: 12px 16px 28px;
+  padding: 12px 16px;
   border-top: 1px solid var(--border-default);
   background: var(--surface-card);
 }
