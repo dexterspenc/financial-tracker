@@ -162,28 +162,14 @@ function AkunSection({ userId }) {
     setLoading(false);
   };
 
-  const dayToDateInput = (day) => {
-    if (!day) return '';
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(Number(day)).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-
-  const dateInputToDay = (val) => {
-    if (!val) return null;
-    return parseInt(val.split('-')[2], 10);
-  };
-
   const startEdit = (acc) => {
     setEditingId(acc.id);
     setEditForm({
       name: acc.name, purpose: acc.purpose, sort_order: acc.sort_order,
       is_credit_account: acc.is_credit_account || false,
       credit_limit: acc.credit_limit ?? '',
-      statement_date: dayToDateInput(acc.statement_date),
-      due_date: dayToDateInput(acc.due_date),
+      statement_date: acc.statement_date ?? '',
+      due_date: acc.due_date ?? '',
     });
   };
 
@@ -197,8 +183,8 @@ function AkunSection({ userId }) {
         sort_order: Number(editForm.sort_order),
         is_credit_account: editForm.is_credit_account,
         credit_limit: editForm.is_credit_account && editForm.credit_limit !== '' ? Number(editForm.credit_limit) : null,
-        statement_date: editForm.is_credit_account && editForm.statement_date ? dateInputToDay(editForm.statement_date) : null,
-        due_date: editForm.is_credit_account && editForm.due_date ? dateInputToDay(editForm.due_date) : null,
+        statement_date: editForm.is_credit_account && editForm.statement_date !== '' ? Number(editForm.statement_date) : null,
+        due_date: editForm.is_credit_account && editForm.due_date !== '' ? Number(editForm.due_date) : null,
       })
       .eq('id', editingId);
     setSaving(false);
@@ -233,8 +219,8 @@ function AkunSection({ userId }) {
         is_active: true,
         is_credit_account: addForm.is_credit_account,
         credit_limit: addForm.is_credit_account && addForm.credit_limit !== '' ? Number(addForm.credit_limit) : null,
-        statement_date: addForm.is_credit_account && addForm.statement_date ? dateInputToDay(addForm.statement_date) : null,
-        due_date: addForm.is_credit_account && addForm.due_date ? dateInputToDay(addForm.due_date) : null,
+        statement_date: addForm.is_credit_account && addForm.statement_date !== '' ? Number(addForm.statement_date) : null,
+        due_date: addForm.is_credit_account && addForm.due_date !== '' ? Number(addForm.due_date) : null,
       });
     setSaving(false);
     if (error) { toast.error('Gagal menambah akun'); return; }
@@ -291,20 +277,26 @@ function AkunSection({ userId }) {
                   min="0"
                 />
                 <div className="cc-date-row">
-                  <input
-                    className="settings-input"
-                    type="date"
-                    placeholder="Tanggal Statement"
+                  <select
+                    className="settings-select"
                     value={addForm.statement_date}
                     onChange={(e) => setAddForm({ ...addForm, statement_date: e.target.value })}
-                  />
-                  <input
-                    className="settings-input"
-                    type="date"
-                    placeholder="Tanggal Jatuh Tempo"
+                  >
+                    <option value="" disabled>Tanggal Statement</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="settings-select"
                     value={addForm.due_date}
                     onChange={(e) => setAddForm({ ...addForm, due_date: e.target.value })}
-                  />
+                  >
+                    <option value="" disabled>Tanggal Jatuh Tempo</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
@@ -358,20 +350,26 @@ function AkunSection({ userId }) {
                         min="0"
                       />
                       <div className="cc-date-row">
-                        <input
-                          className="settings-input"
-                          type="date"
-                          placeholder="Tanggal Statement"
+                        <select
+                          className="settings-select"
                           value={editForm.statement_date}
                           onChange={(e) => setEditForm({ ...editForm, statement_date: e.target.value })}
-                        />
-                        <input
-                          className="settings-input"
-                          type="date"
-                          placeholder="Tanggal Jatuh Tempo"
+                        >
+                          <option value="" disabled>Tanggal Statement</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                        <select
+                          className="settings-select"
                           value={editForm.due_date}
                           onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })}
-                        />
+                        >
+                          <option value="" disabled>Tanggal Jatuh Tempo</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   )}
