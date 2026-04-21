@@ -25,7 +25,7 @@ const fetchAllData = async (userId) => {
       .order('created_at', { ascending: false }),
     supabase
       .from('accounts')
-      .select('*')
+      .select('id, name, purpose, sort_order, is_active, is_credit_account, credit_limit, statement_date, due_date')
       .eq('user_id', userId)
       .eq('is_active', true)
       .order('sort_order'),

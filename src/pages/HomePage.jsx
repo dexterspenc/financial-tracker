@@ -47,13 +47,17 @@ function HomePage() {
     accountBalances.forEach(ab => {
       map[ab.account_id] = Number(ab.balance) || 0;
     });
+    // Seed CC accounts at 0 even if they have no account_balances entry
+    accounts.forEach(a => {
+      if (a.is_credit_account && !(a.id in map)) map[a.id] = 0;
+    });
     allTransactions.forEach(txn => {
       if (txn.accountId && txn.accountId in map) {
         map[txn.accountId] += (txn.credit || 0) - (txn.debit || 0);
       }
     });
     return map;
-  }, [accountBalances, allTransactions]);
+  }, [accountBalances, allTransactions, accounts]);
 
   const accountsById = useMemo(() => {
     const map = {};
@@ -128,35 +132,37 @@ function HomePage() {
                 <h2>Saldo Akun</h2>
               </div>
               <div className="accounts-grid">
-                {accountBalances.map(ab => {
-                  const acct = accountsById[ab.account_id];
-                  const isCC = acct?.is_credit_account;
-                  const runningBal = runningBalances[ab.account_id] ?? ab.balance;
-                  const bill = -runningBal; // positive bill = money owed on CC
-                  return (
-                    <div key={ab.id} className={`account-balance-card${isCC ? ' cc-account-card' : ''}`}>
+                {accountBalances
+                  .filter(ab => !accountsById[ab.account_id]?.is_credit_account)
+                  .map(ab => (
+                    <div key={ab.id} className="account-balance-card">
                       <div className="account-balance-name">{ab.accounts?.name}</div>
                       <div className="account-balance-purpose">{ab.accounts?.purpose}</div>
-                      {isCC ? (
-                        <>
-                          <div className="account-balance-label-cc">Tagihan</div>
-                          <div className={`account-balance-amount${bill > 0 ? ' cc-bill-amount' : ''}`}>
-                            Rp {hideBalance ? '••••••' : bill.toLocaleString('id-ID')}
-                          </div>
-                          {!hideBalance && acct?.credit_limit && (
-                            <div className="cc-limit-info">
-                              Limit: Rp {Number(acct.credit_limit).toLocaleString('id-ID')} · Terpakai {bill > 0 ? Math.min(100, (bill / Number(acct.credit_limit) * 100)).toFixed(0) : 0}%
-                            </div>
-                          )}
-                          {!hideBalance && acct?.statement_date && acct?.due_date && (
-                            <div className="cc-dates-info">
-                              Statement tgl {acct.statement_date} · Jatuh tempo tgl {acct.due_date}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="account-balance-amount">
-                          Rp {hideBalance ? '••••••' : runningBal.toLocaleString('id-ID')}
+                      <div className="account-balance-amount">
+                        Rp {hideBalance ? '••••••' : (runningBalances[ab.account_id] ?? ab.balance).toLocaleString('id-ID')}
+                      </div>
+                    </div>
+                  ))}
+
+                {accounts.filter(a => a.is_credit_account).map(a => {
+                  const runningBal = runningBalances[a.id] ?? 0;
+                  const bill = -runningBal;
+                  return (
+                    <div key={a.id} className="account-balance-card cc-account-card">
+                      <div className="account-balance-name">{a.name}</div>
+                      <div className="account-balance-purpose">{a.purpose}</div>
+                      <div className="account-balance-label-cc">Tagihan</div>
+                      <div className={`account-balance-amount${bill > 0 ? ' cc-bill-amount' : ''}`}>
+                        Rp {hideBalance ? '••••••' : bill.toLocaleString('id-ID')}
+                      </div>
+                      {!hideBalance && a.credit_limit && (
+                        <div className="cc-limit-info">
+                          Limit: Rp {Number(a.credit_limit).toLocaleString('id-ID')} · Terpakai {bill > 0 ? Math.min(100, (bill / Number(a.credit_limit) * 100)).toFixed(0) : 0}%
+                        </div>
+                      )}
+                      {!hideBalance && a.statement_date && a.due_date && (
+                        <div className="cc-dates-info">
+                          Statement tgl {a.statement_date} · Jatuh tempo tgl {a.due_date}
                         </div>
                       )}
                     </div>

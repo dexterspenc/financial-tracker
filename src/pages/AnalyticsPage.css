@@ -1379,7 +1379,7 @@
 }
 
 .cc-total {
-  color: var(--color-expense) !important;
+  color: white;
 }
 
 .cc-account-item .account-balance.negative {
