@@ -1335,6 +1335,16 @@ function AnalyticsPage() {
                                 <div className="account-bar-fill" style={{ width: '0%' }} />
                               </div>
                             )}
+                            {acc.credit_limit && (
+                              <span className="cc-detail-info">
+                                Limit: Rp {Number(acc.credit_limit).toLocaleString('id-ID')}
+                              </span>
+                            )}
+                            {acc.statement_date && acc.due_date && (
+                              <span className="cc-detail-info">
+                                Statement tgl {acc.statement_date} · Jatuh tempo tgl {acc.due_date}
+                              </span>
+                            )}
                           </div>
                         );
                       })}
