@@ -342,6 +342,31 @@
   color: var(--brand-700);
 }
 
+.account-balance-label-cc {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-expense);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.cc-bill-amount {
+  color: var(--color-expense) !important;
+}
+
+.cc-limit-info,
+.cc-dates-info {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.cc-account-card {
+  border-color: #fecaca;
+}
+
 /* ─── Legacy subtitle class (keep for AddPage) ───────────── */
 .subtitle {
   color: var(--text-muted);

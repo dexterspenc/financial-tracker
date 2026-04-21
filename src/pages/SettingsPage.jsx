@@ -148,7 +148,7 @@ function AkunSection({ userId }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', purpose: 'Living', sort_order: 99 });
+  const [addForm, setAddForm] = useState({ name: '', purpose: 'Living', sort_order: 99, is_credit_account: false, credit_limit: '', statement_date: '', due_date: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -164,14 +164,28 @@ function AkunSection({ userId }) {
 
   const startEdit = (acc) => {
     setEditingId(acc.id);
-    setEditForm({ name: acc.name, purpose: acc.purpose, sort_order: acc.sort_order });
+    setEditForm({
+      name: acc.name, purpose: acc.purpose, sort_order: acc.sort_order,
+      is_credit_account: acc.is_credit_account || false,
+      credit_limit: acc.credit_limit ?? '',
+      statement_date: acc.statement_date ?? '',
+      due_date: acc.due_date ?? '',
+    });
   };
 
   const saveEdit = async () => {
     setSaving(true);
     const { error } = await supabase
       .from('accounts')
-      .update({ name: editForm.name, purpose: editForm.purpose, sort_order: Number(editForm.sort_order) })
+      .update({
+        name: editForm.name,
+        purpose: editForm.purpose,
+        sort_order: Number(editForm.sort_order),
+        is_credit_account: editForm.is_credit_account,
+        credit_limit: editForm.is_credit_account && editForm.credit_limit !== '' ? Number(editForm.credit_limit) : null,
+        statement_date: editForm.is_credit_account && editForm.statement_date !== '' ? Number(editForm.statement_date) : null,
+        due_date: editForm.is_credit_account && editForm.due_date !== '' ? Number(editForm.due_date) : null,
+      })
       .eq('id', editingId);
     setSaving(false);
     if (error) { toast.error('Gagal menyimpan'); return; }
@@ -197,12 +211,22 @@ function AkunSection({ userId }) {
     setSaving(true);
     const { error } = await supabase
       .from('accounts')
-      .insert({ user_id: userId, name: addForm.name.trim(), purpose: addForm.purpose, sort_order: Number(addForm.sort_order), is_active: true });
+      .insert({
+        user_id: userId,
+        name: addForm.name.trim(),
+        purpose: addForm.purpose,
+        sort_order: Number(addForm.sort_order),
+        is_active: true,
+        is_credit_account: addForm.is_credit_account,
+        credit_limit: addForm.is_credit_account && addForm.credit_limit !== '' ? Number(addForm.credit_limit) : null,
+        statement_date: addForm.is_credit_account && addForm.statement_date !== '' ? Number(addForm.statement_date) : null,
+        due_date: addForm.is_credit_account && addForm.due_date !== '' ? Number(addForm.due_date) : null,
+      });
     setSaving(false);
     if (error) { toast.error('Gagal menambah akun'); return; }
     toast.success('Akun ditambahkan');
     setShowAdd(false);
-    setAddForm({ name: '', purpose: 'Living', sort_order: 99 });
+    setAddForm({ name: '', purpose: 'Living', sort_order: 99, is_credit_account: false, credit_limit: '', statement_date: '', due_date: '' });
     load();
     refetch().catch(() => {});
   };
@@ -234,6 +258,44 @@ function AkunSection({ userId }) {
             >
               {PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
+            <label className="cc-toggle">
+              <input
+                type="checkbox"
+                checked={addForm.is_credit_account}
+                onChange={(e) => setAddForm({ ...addForm, is_credit_account: e.target.checked })}
+              />
+              <span>Ini kartu kredit</span>
+            </label>
+            {addForm.is_credit_account && (
+              <div className="cc-fields">
+                <input
+                  className="settings-input"
+                  type="number"
+                  placeholder="Limit Kartu (opsional)"
+                  value={addForm.credit_limit}
+                  onChange={(e) => setAddForm({ ...addForm, credit_limit: e.target.value })}
+                  min="0"
+                />
+                <div className="cc-date-row">
+                  <input
+                    className="settings-input"
+                    type="number"
+                    placeholder="Tgl Statement (1–31)"
+                    value={addForm.statement_date}
+                    onChange={(e) => setAddForm({ ...addForm, statement_date: e.target.value })}
+                    min="1" max="31"
+                  />
+                  <input
+                    className="settings-input"
+                    type="number"
+                    placeholder="Tgl Jatuh Tempo (1–31)"
+                    value={addForm.due_date}
+                    onChange={(e) => setAddForm({ ...addForm, due_date: e.target.value })}
+                    min="1" max="31"
+                  />
+                </div>
+              </div>
+            )}
             <div className="settings-add-actions">
               <button className="btn btn-sm btn-primary" onClick={handleAdd} disabled={saving}>
                 {saving ? <span className="spinner" /> : <><Check size={13} /> Simpan</>}
@@ -265,6 +327,44 @@ function AkunSection({ userId }) {
                   >
                     {PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
+                  <label className="cc-toggle">
+                    <input
+                      type="checkbox"
+                      checked={editForm.is_credit_account}
+                      onChange={(e) => setEditForm({ ...editForm, is_credit_account: e.target.checked })}
+                    />
+                    <span>Ini kartu kredit</span>
+                  </label>
+                  {editForm.is_credit_account && (
+                    <div className="cc-fields">
+                      <input
+                        className="settings-input"
+                        type="number"
+                        placeholder="Limit Kartu (opsional)"
+                        value={editForm.credit_limit}
+                        onChange={(e) => setEditForm({ ...editForm, credit_limit: e.target.value })}
+                        min="0"
+                      />
+                      <div className="cc-date-row">
+                        <input
+                          className="settings-input"
+                          type="number"
+                          placeholder="Tgl Statement (1–31)"
+                          value={editForm.statement_date}
+                          onChange={(e) => setEditForm({ ...editForm, statement_date: e.target.value })}
+                          min="1" max="31"
+                        />
+                        <input
+                          className="settings-input"
+                          type="number"
+                          placeholder="Tgl Jatuh Tempo (1–31)"
+                          value={editForm.due_date}
+                          onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })}
+                          min="1" max="31"
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="settings-inline-actions">
                     <button className="icon-btn icon-btn-success" onClick={saveEdit} disabled={saving}>
                       <Check size={14} />
@@ -277,7 +377,10 @@ function AkunSection({ userId }) {
               ) : (
                 <>
                   <div className="settings-item-info">
-                    <div className="settings-item-name">{acc.name}</div>
+                    <div className="settings-item-name">
+                      {acc.name}
+                      {acc.is_credit_account && <span className="cc-badge">CC</span>}
+                    </div>
                     <div className="settings-item-sub">{acc.purpose}</div>
                   </div>
                   <div className="settings-item-actions">

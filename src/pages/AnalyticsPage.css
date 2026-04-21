@@ -1332,3 +1332,90 @@
   color: var(--text-muted);
   font-size: 0.875rem;
 }
+
+/* ── Net Worth Breakdown (when CC accounts exist) ── */
+.allocation-networth {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+}
+
+.allocation-networth-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.allocation-networth-row strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.cc-liability-row strong {
+  color: var(--color-expense);
+}
+
+.allocation-networth-total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-default);
+  font-weight: 600;
+}
+
+.allocation-networth-total strong {
+  font-size: 1rem;
+}
+
+/* ── CC section in Accounts tab ── */
+.cc-purpose-section .purpose-header {
+  border-color: #fecaca;
+}
+
+.cc-total {
+  color: var(--color-expense) !important;
+}
+
+.cc-account-item .account-balance.negative {
+  color: var(--color-expense);
+}
+
+.cc-util-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cc-util-bar-wrap {
+  height: 5px;
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.cc-util-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--brand-500);
+  transition: width 0.4s ease;
+}
+
+.cc-util-bar-fill.warning {
+  background: #f59e0b;
+}
+
+.cc-util-bar-fill.danger {
+  background: var(--color-expense);
+}
+
+.cc-util-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}

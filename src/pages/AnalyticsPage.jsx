@@ -78,6 +78,42 @@ function AnalyticsPage() {
     return { byName, byPurpose };
   }, [accountBalances]);
 
+  // Net worth breakdown separating regular assets from CC liabilities
+  const netWorthBreakdown = useMemo(() => {
+    const ccAccounts = accounts.filter(a => a.is_credit_account);
+    if (ccAccounts.length === 0) return null;
+
+    const ccAccountIds = new Set(ccAccounts.map(a => a.id));
+    const regularBal = {};
+    const ccBal = {};
+
+    accountBalances.forEach(ab => {
+      const bal = Number(ab.balance) || 0;
+      if (ccAccountIds.has(ab.account_id)) {
+        ccBal[ab.account_id] = (ccBal[ab.account_id] || 0) + bal;
+      } else {
+        regularBal[ab.account_id] = (regularBal[ab.account_id] || 0) + bal;
+      }
+    });
+
+    allTransactions.forEach(txn => {
+      const delta = (txn.credit || 0) - (txn.debit || 0);
+      if (ccAccountIds.has(txn.accountId)) {
+        ccBal[txn.accountId] = (ccBal[txn.accountId] || 0) + delta;
+      } else if (txn.accountId) {
+        regularBal[txn.accountId] = (regularBal[txn.accountId] || 0) + delta;
+      }
+    });
+
+    const totalAssets = Object.values(regularBal).reduce((sum, v) => sum + v, 0);
+    const totalCCBalance = Object.values(ccBal).reduce((sum, v) => sum + v, 0);
+    // Negative CC balance = outstanding debt; cap liabilities at 0 (no negative debt)
+    const totalCCLiabilities = Math.max(0, -totalCCBalance);
+    const netWorth = totalAssets + totalCCBalance;
+
+    return { totalAssets, totalCCLiabilities, netWorth };
+  }, [accounts, accountBalances, allTransactions]);
+
   useEffect(() => {
     if (allTransactions.length > 0) {
       calculateAnalytics(allTransactions, openingBalances.byPurpose);
@@ -986,8 +1022,10 @@ function AnalyticsPage() {
     });
   }
 
-  // Group accounts by purpose for the accounts tab
+  // Group non-CC accounts by purpose; collect CC accounts separately
+  const creditCardAccounts = accounts.filter(a => a.is_credit_account);
   const accountsByPurpose = accounts.reduce((groups, acc) => {
+    if (acc.is_credit_account) return groups;
     if (!groups[acc.purpose]) groups[acc.purpose] = [];
     groups[acc.purpose].push(acc.name);
     return groups;
@@ -1088,9 +1126,28 @@ function AnalyticsPage() {
 
               <div className="allocation-card">
                 <h2>🏦 Asset Allocation</h2>
-                <div className="allocation-total">
-                  Total Net Worth: <strong>Rp {analytics.totalNetWorth.toLocaleString('id-ID')}</strong>
-                </div>
+                {netWorthBreakdown ? (
+                  <div className="allocation-networth">
+                    <div className="allocation-networth-row">
+                      <span>Total Aset</span>
+                      <strong>Rp {netWorthBreakdown.totalAssets.toLocaleString('id-ID')}</strong>
+                    </div>
+                    {netWorthBreakdown.totalCCLiabilities > 0 && (
+                      <div className="allocation-networth-row cc-liability-row">
+                        <span>Tagihan CC</span>
+                        <strong>−Rp {netWorthBreakdown.totalCCLiabilities.toLocaleString('id-ID')}</strong>
+                      </div>
+                    )}
+                    <div className="allocation-networth-row allocation-networth-total">
+                      <span>Net Worth</span>
+                      <strong>Rp {netWorthBreakdown.netWorth.toLocaleString('id-ID')}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="allocation-total">
+                    Total Net Worth: <strong>Rp {analytics.totalNetWorth.toLocaleString('id-ID')}</strong>
+                  </div>
+                )}
                 <div className="allocation-list">
                   {Object.entries(analytics.accountBalances).map(([purpose, amount]) => {
                     const percentage = analytics.totalNetWorth > 0
@@ -1230,6 +1287,56 @@ function AnalyticsPage() {
                     </div>
                   );
                 })}
+
+                {creditCardAccounts.length > 0 && (
+                  <div className="purpose-section cc-purpose-section">
+                    <div className="purpose-header">
+                      <span className="purpose-name">Kartu Kredit</span>
+                      <span className="purpose-total cc-total">
+                        Tagihan: Rp {creditCardAccounts.reduce((sum, acc) => {
+                          const bal = accountsData.balances[acc.name] || 0;
+                          return sum + Math.max(0, -bal);
+                        }, 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="accounts-list">
+                      {creditCardAccounts.map(acc => {
+                        const balance = accountsData.balances[acc.name] || 0;
+                        const bill = -balance;
+                        const utilPct = acc.credit_limit && bill > 0
+                          ? Math.min(100, (bill / Number(acc.credit_limit)) * 100)
+                          : 0;
+                        return (
+                          <div key={acc.id} className="account-item cc-account-item">
+                            <div className="account-info">
+                              <span className="account-name">{acc.name}</span>
+                              <span className={`account-balance${bill > 0 ? ' negative' : ''}`}>
+                                {bill > 0 ? `Tagihan: Rp ${bill.toLocaleString('id-ID')}` : 'Tidak ada tagihan'}
+                              </span>
+                            </div>
+                            {acc.credit_limit ? (
+                              <div className="cc-util-row">
+                                <div className="cc-util-bar-wrap">
+                                  <div
+                                    className={`cc-util-bar-fill${utilPct > 80 ? ' danger' : utilPct > 50 ? ' warning' : ''}`}
+                                    style={{ width: `${utilPct}%` }}
+                                  />
+                                </div>
+                                <span className="cc-util-label">
+                                  {utilPct.toFixed(0)}% dari Rp {Number(acc.credit_limit).toLocaleString('id-ID')}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="account-bar">
+                                <div className="account-bar-fill" style={{ width: '0%' }} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="transfers-card">

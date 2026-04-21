@@ -7,7 +7,7 @@ import './HomePage.css';
 
 function HomePage() {
   const navigate = useNavigate();
-  const { allTransactions, accountBalances, loading } = useData();
+  const { allTransactions, accountBalances, accounts, loading } = useData();
   const [hideBalance, setHideBalance] = useState(true);
 
   const stats = useMemo(() => {
@@ -54,6 +54,12 @@ function HomePage() {
     });
     return map;
   }, [accountBalances, allTransactions]);
+
+  const accountsById = useMemo(() => {
+    const map = {};
+    accounts.forEach(a => { map[a.id] = a; });
+    return map;
+  }, [accounts]);
 
   const fmt = (amount) => {
     if (hideBalance) return '••••••';
@@ -122,15 +128,40 @@ function HomePage() {
                 <h2>Saldo Akun</h2>
               </div>
               <div className="accounts-grid">
-                {accountBalances.map(ab => (
-                  <div key={ab.id} className="account-balance-card">
-                    <div className="account-balance-name">{ab.accounts?.name}</div>
-                    <div className="account-balance-purpose">{ab.accounts?.purpose}</div>
-                    <div className="account-balance-amount">
-                      Rp {hideBalance ? '••••••' : (runningBalances[ab.account_id] ?? ab.balance).toLocaleString('id-ID')}
+                {accountBalances.map(ab => {
+                  const acct = accountsById[ab.account_id];
+                  const isCC = acct?.is_credit_account;
+                  const runningBal = runningBalances[ab.account_id] ?? ab.balance;
+                  const bill = -runningBal; // positive bill = money owed on CC
+                  return (
+                    <div key={ab.id} className={`account-balance-card${isCC ? ' cc-account-card' : ''}`}>
+                      <div className="account-balance-name">{ab.accounts?.name}</div>
+                      <div className="account-balance-purpose">{ab.accounts?.purpose}</div>
+                      {isCC ? (
+                        <>
+                          <div className="account-balance-label-cc">Tagihan</div>
+                          <div className={`account-balance-amount${bill > 0 ? ' cc-bill-amount' : ''}`}>
+                            Rp {hideBalance ? '••••••' : bill.toLocaleString('id-ID')}
+                          </div>
+                          {!hideBalance && acct?.credit_limit && (
+                            <div className="cc-limit-info">
+                              Limit: Rp {Number(acct.credit_limit).toLocaleString('id-ID')} · Terpakai {bill > 0 ? Math.min(100, (bill / Number(acct.credit_limit) * 100)).toFixed(0) : 0}%
+                            </div>
+                          )}
+                          {!hideBalance && acct?.statement_date && acct?.due_date && (
+                            <div className="cc-dates-info">
+                              Statement tgl {acct.statement_date} · Jatuh tempo tgl {acct.due_date}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="account-balance-amount">
+                          Rp {hideBalance ? '••••••' : runningBal.toLocaleString('id-ID')}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
