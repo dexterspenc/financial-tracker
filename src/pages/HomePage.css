@@ -25,25 +25,26 @@
   color: var(--text-muted);
 }
 
-.toggle-visibility {
-  width: 36px;
-  height: 36px;
+.hero-visibility-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85);
   border-radius: var(--radius-md);
-  border: 1.5px solid var(--border-default);
-  background: var(--surface-card);
-  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
-  flex-shrink: 0;
+  transition: background 0.15s;
+  z-index: 2;
 }
 
-.toggle-visibility:hover {
-  border-color: var(--brand-600);
-  color: var(--brand-600);
-  background: var(--brand-50);
+.hero-visibility-btn:hover {
+  background: rgba(255,255,255,0.25);
 }
 
 /* ─── Summary hero card ──────────────────────────────────── */

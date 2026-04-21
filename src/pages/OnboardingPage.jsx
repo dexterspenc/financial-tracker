@@ -71,6 +71,7 @@ function OnboardingPage() {
 
   // Step 3 — balances
   const [initialBalances, setInitialBalances] = useState({});
+  const [balanceError, setBalanceError] = useState('');
 
   const [saving, setSaving] = useState(false);
 
@@ -586,19 +587,20 @@ function OnboardingPage() {
                     <div className="ob-balance-input-wrap">
                       <span className="ob-balance-rp">Rp</span>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         className="ob-balance-input"
                         placeholder="0"
-                        min="0"
-                        value={initialBalances[acc.name] || ''}
+                        value={initialBalances[acc.name] ? Number(initialBalances[acc.name]).toLocaleString('id-ID') : ''}
                         onChange={e =>
-                          setInitialBalances(prev => ({ ...prev, [acc.name]: e.target.value }))
+                          setInitialBalances(prev => ({ ...prev, [acc.name]: e.target.value.replace(/\D/g, '') }))
                         }
                       />
                     </div>
                   </div>
                 ))}
               </div>
+              {balanceError && <p className="ob-balance-error">{balanceError}</p>}
             </div>
           )}
 
@@ -654,7 +656,20 @@ function OnboardingPage() {
               <button
                 type="button"
                 className="btn btn-primary ob-btn-next"
-                onClick={() => setStep(s => s + 1)}
+                onClick={() => {
+                  if (step === 3) {
+                    const invalid = Object.values(initialBalances).find(v => {
+                      const n = parseFloat(v);
+                      return v !== '' && v !== undefined && (isNaN(n) || n < 0);
+                    });
+                    if (invalid !== undefined) {
+                      setBalanceError('Saldo tidak boleh negatif atau berisi karakter tidak valid.');
+                      return;
+                    }
+                    setBalanceError('');
+                  }
+                  setStep(s => s + 1);
+                }}
                 disabled={
                   (step === 1 && !canNext1) ||
                   (step === 2 && !canNext2)

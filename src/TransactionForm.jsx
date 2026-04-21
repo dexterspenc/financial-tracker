@@ -266,13 +266,13 @@ function TransactionForm() {
             <div className="form-group">
               <label>💵 Amount (Rp)</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 name="amount"
-                value={formData.amount}
-                onChange={handleChange}
+                value={formData.amount ? Number(formData.amount).toLocaleString('id-ID') : ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value.replace(/\D/g, '') }))}
                 placeholder="0"
                 required
-                min="0"
               />
             </div>
           </>
@@ -303,13 +303,13 @@ function TransactionForm() {
             <div className="form-group">
               <label>💵 Amount (Rp)</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 name="amount"
-                value={formData.amount}
-                onChange={handleChange}
+                value={formData.amount ? Number(formData.amount).toLocaleString('id-ID') : ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value.replace(/\D/g, '') }))}
                 placeholder="0"
                 required
-                min="0"
               />
             </div>
 

@@ -582,6 +582,13 @@
   box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
 }
 
+.ob-balance-error {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--color-expense, #dc2626);
+  font-weight: 500;
+}
+
 /* ── Done step ── */
 .ob-done {
   align-items: center;

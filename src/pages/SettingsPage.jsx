@@ -696,12 +696,12 @@ function BudgetSection({ userId }) {
               <div className="budget-input-wrap">
                 <span className="budget-prefix">Rp</span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   className="budget-input"
                   placeholder="0"
-                  value={inputs[cat.id] ?? ''}
-                  onChange={(e) => setInputs({ ...inputs, [cat.id]: e.target.value })}
-                  min="0"
+                  value={inputs[cat.id] ? Number(inputs[cat.id]).toLocaleString('id-ID') : ''}
+                  onChange={(e) => setInputs({ ...inputs, [cat.id]: e.target.value.replace(/\D/g, '') })}
                 />
               </div>
             </div>

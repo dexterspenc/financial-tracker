@@ -86,13 +86,6 @@ function HomePage() {
           <h1>Financial Tracker</h1>
           <p>{currentMonthLabel}</p>
         </div>
-        <button
-          className="toggle-visibility"
-          onClick={() => setHideBalance(!hideBalance)}
-          title={hideBalance ? 'Show balance' : 'Hide balance'}
-        >
-          {hideBalance ? <EyeOff size={16} /> : <Eye size={16} />}
-        </button>
       </div>
 
       {loading ? (
@@ -103,6 +96,13 @@ function HomePage() {
       ) : (
         <>
           <div className="summary-hero">
+            <button
+              className="hero-visibility-btn"
+              onClick={() => setHideBalance(!hideBalance)}
+              title={hideBalance ? 'Show balance' : 'Hide balance'}
+            >
+              {hideBalance ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
             <div className="hero-label">Net Cashflow</div>
             <div className="hero-amount">
               {fmtCashflow(stats.netCashflow)}
