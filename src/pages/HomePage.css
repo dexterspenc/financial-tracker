@@ -342,25 +342,24 @@
   color: var(--brand-700);
 }
 
-.account-balance-label-cc {
-  font-size: 0.68rem;
+.cc-tagihan-prefix {
+  display: block;
+  font-size: 0.62rem;
   font-weight: 600;
-  color: var(--color-expense);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 2px;
+  opacity: 0.75;
+  margin-bottom: 1px;
 }
 
 .cc-bill-amount {
   color: var(--color-expense) !important;
 }
 
-.cc-limit-info,
-.cc-dates-info {
+.cc-limit-info {
   font-size: 0.68rem;
   color: var(--text-muted);
-  margin-top: 4px;
-  line-height: 1.4;
+  margin-top: 3px;
 }
 
 .cc-account-card {
