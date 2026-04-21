@@ -72,8 +72,9 @@ function AnalyticsPage() {
     const byName = {};
     const byPurpose = {};
     accountBalances.forEach(b => {
-      if (b.accounts?.name)    byName[b.accounts.name]       = (byName[b.accounts.name]       || 0) + b.balance;
-      if (b.accounts?.purpose) byPurpose[b.accounts.purpose] = (byPurpose[b.accounts.purpose] || 0) + b.balance;
+      if (b.accounts?.name) byName[b.accounts.name] = (byName[b.accounts.name] || 0) + b.balance;
+      if (b.accounts?.purpose && !b.accounts?.is_credit_account)
+        byPurpose[b.accounts.purpose] = (byPurpose[b.accounts.purpose] || 0) + b.balance;
     });
     return { byName, byPurpose };
   }, [accountBalances]);
@@ -137,6 +138,8 @@ function AnalyticsPage() {
     const currentMonth = selectedMonth;
     const lastMonth = format(subMonths(new Date(selectedMonth + '-01'), 1), 'yyyy-MM');
 
+    const ccAccountIds = new Set(accounts.filter(a => a.is_credit_account).map(a => a.id));
+
     let monthIncome = 0;
     let monthExpense = 0;
     let lastMonthExpense = 0;
@@ -174,7 +177,8 @@ function AnalyticsPage() {
         lastMonthExpense += debit || 0;
       }
 
-      if (accountPurpose) {
+      // Only include non-CC accounts in purpose breakdown
+      if (accountPurpose && !ccAccountIds.has(txn.accountId)) {
         accountBalances[accountPurpose] = (accountBalances[accountPurpose] || 0) + (credit || 0) - (debit || 0);
       }
     });

@@ -37,7 +37,7 @@ const fetchAllData = async (userId) => {
       .order('sort_order'),
     supabase
       .from('account_balances')
-      .select('*, accounts(id, name, purpose)')
+      .select('*, accounts(id, name, purpose, is_credit_account, credit_limit, statement_date, due_date)')
       .eq('user_id', userId),
     supabase
       .from('user_settings')
