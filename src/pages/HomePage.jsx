@@ -146,7 +146,7 @@ function HomePage() {
 
                 {accounts.filter(a => a.is_credit_account).map(a => {
                   const runningBal = runningBalances[a.id] ?? 0;
-                  const bill = -runningBal;
+                  const bill = runningBal === 0 ? 0 : -runningBal;
                   return (
                     <div key={a.id} className="account-balance-card cc-account-card">
                       <div className="account-balance-name">{a.name}</div>
