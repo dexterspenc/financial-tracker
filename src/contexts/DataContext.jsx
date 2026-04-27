@@ -9,8 +9,10 @@ const SELECT_TXN = '*, accounts(id, name, purpose), categories(id, name, flow_ty
 const EMPTY_QUICK_ACTIONS = [null, null, null, null];
 const MINI_ALADDIN_URL = 'https://mini-aladdin-silk.vercel.app/api/portfolio/holdings';
 const MINI_ALADDIN_KEY = import.meta.env.VITE_MINI_ALADDIN_API_KEY;
+const MINI_ALADDIN_OWNER_UID = '18a7fc48-a07c-49ad-9387-84cc04de5638';
 
-const fetchPortfolioHoldings = async () => {
+const fetchPortfolioHoldings = async (userId) => {
+  if (userId !== MINI_ALADDIN_OWNER_UID) return [];
   if (!MINI_ALADDIN_KEY) return [];
   try {
     const res = await fetch(MINI_ALADDIN_URL, {
@@ -105,7 +107,7 @@ export function DataProvider({ children }) {
       try {
         const [{ txns, accs, cats, bals, quickActions: qa }, holdings] = await Promise.all([
           fetchAllData(user.id),
-          fetchPortfolioHoldings(),
+          fetchPortfolioHoldings(user.id),
         ]);
         if (!cancelled) {
           setAllTransactions(txns);
