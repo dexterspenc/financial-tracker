@@ -14,9 +14,7 @@ export function holdingsToOverrides(holdings) {
   const overrides = {};
   holdings.forEach(h => {
     const name = ASSET_CLASS_MAP[h.asset_class];
-    if (name) overrides[name] = (overrides[name] || 0) + (Number(h.current_value) || 0);
+    if (name) overrides[name] = (overrides[name] || 0) + Math.round(Number(h.current_value) || 0);
   });
-  console.log('[portfolio] raw holdings:', holdings);
-  console.log('[portfolio] investmentOverrides:', overrides);
   return overrides;
 }

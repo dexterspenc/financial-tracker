@@ -20,7 +20,6 @@ const fetchPortfolioHoldings = async (userId) => {
     });
     if (!res.ok) return [];
     const data = await res.json();
-    console.log('[portfolio] raw API response:', data);
     if (Array.isArray(data)) return data;
     if (Array.isArray(data.holdings)) return data.holdings;
     if (Array.isArray(data.data)) return data.data;

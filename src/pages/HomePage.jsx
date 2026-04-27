@@ -63,15 +63,11 @@ function HomePage() {
       }
     });
     // Override mapped Investment accounts with live portfolio values
-    console.log('[homepage] accounts (Investment):', accounts.filter(a => a.purpose === 'Investment').map(a => ({ id: a.id, name: a.name })));
-    console.log('[homepage] investmentOverrides:', investmentOverrides);
     accounts.forEach(a => {
       if (a.purpose === 'Investment' && a.name in investmentOverrides) {
-        console.log(`[homepage] overriding ${a.name} (${a.id}): ${map[a.id]} → ${investmentOverrides[a.name]}`);
         map[a.id] = investmentOverrides[a.name];
       }
     });
-    console.log('[homepage] runningBalances (after override):', { ...map });
     return map;
   }, [accountBalances, allTransactions, accounts, investmentOverrides]);
 

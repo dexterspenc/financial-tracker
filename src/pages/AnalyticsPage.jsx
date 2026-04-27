@@ -135,14 +135,10 @@ function AnalyticsPage() {
         txnBased[txn.account] += (txn.credit || 0) - (txn.debit || 0);
       }
     });
-    const delta = Object.entries(investmentOverrides).reduce(
+    return Object.entries(investmentOverrides).reduce(
       (sum, [name, portfolioVal]) => sum + portfolioVal - (txnBased[name] || 0),
       0
     );
-    console.log('[analytics] openingBalances.byName:', openingBalances.byName);
-    console.log('[analytics] txnBased for overridden accounts:', txnBased);
-    console.log('[analytics] investmentDelta:', delta);
-    return delta;
   }, [investmentOverrides, openingBalances, allTransactions]);
 
   // analytics with Investment purpose balance replaced by live portfolio total
@@ -169,10 +165,7 @@ function AnalyticsPage() {
   // Accounts tab: balances with live portfolio values applied
   const effectiveAccountsBalances = useMemo(() => {
     if (Object.keys(investmentOverrides).length === 0) return accountsData.balances;
-    const merged = { ...accountsData.balances, ...investmentOverrides };
-    console.log('[analytics] accountsData.balances (Investment keys):', Object.fromEntries(Object.entries(accountsData.balances).filter(([k]) => ['Reksadana','Kripto','Saham'].includes(k))));
-    console.log('[analytics] effectiveAccountsBalances (Investment keys):', Object.fromEntries(Object.entries(merged).filter(([k]) => ['Reksadana','Kripto','Saham'].includes(k))));
-    return merged;
+    return { ...accountsData.balances, ...investmentOverrides };
   }, [accountsData.balances, investmentOverrides]);
 
   useEffect(() => {
