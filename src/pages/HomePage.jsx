@@ -3,11 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Eye, EyeOff, Plus } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { holdingsToOverrides } from '../utils/portfolioOverrides';
 import './HomePage.css';
 
 function HomePage() {
   const navigate = useNavigate();
-  const { allTransactions, accountBalances, accounts, loading } = useData();
+  const { allTransactions, accountBalances, accounts, portfolioHoldings, loading } = useData();
+
+  const investmentOverrides = useMemo(
+    () => holdingsToOverrides(portfolioHoldings),
+    [portfolioHoldings]
+  );
   const [hideBalance, setHideBalance] = useState(true);
 
   const stats = useMemo(() => {
@@ -56,8 +62,14 @@ function HomePage() {
         map[txn.accountId] += (txn.credit || 0) - (txn.debit || 0);
       }
     });
+    // Override mapped Investment accounts with live portfolio values
+    accounts.forEach(a => {
+      if (a.purpose === 'Investment' && a.name in investmentOverrides) {
+        map[a.id] = investmentOverrides[a.name];
+      }
+    });
     return map;
-  }, [accountBalances, allTransactions, accounts]);
+  }, [accountBalances, allTransactions, accounts, investmentOverrides]);
 
   const accountsById = useMemo(() => {
     const map = {};

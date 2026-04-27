@@ -7,6 +7,22 @@ const DataContext = createContext(null);
 
 const SELECT_TXN = '*, accounts(id, name, purpose), categories(id, name, flow_type)';
 const EMPTY_QUICK_ACTIONS = [null, null, null, null];
+const MINI_ALADDIN_URL = 'https://mini-aladdin-silk.vercel.app/api/portfolio/holdings';
+const MINI_ALADDIN_KEY = import.meta.env.VITE_MINI_ALADDIN_API_KEY;
+
+const fetchPortfolioHoldings = async () => {
+  if (!MINI_ALADDIN_KEY) return [];
+  try {
+    const res = await fetch(MINI_ALADDIN_URL, {
+      headers: { 'X-API-Key': MINI_ALADDIN_KEY },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+};
 
 // Fetch functions defined at module scope — no hook factory imports, no TDZ risk
 const fetchAllData = async (userId) => {
@@ -63,13 +79,14 @@ const fetchAllData = async (userId) => {
 export function DataProvider({ children }) {
   const { user } = useAuth();
 
-  const [allTransactions, setAllTransactions] = useState([]);
-  const [accounts, setAccounts]               = useState([]);
-  const [categories, setCategories]           = useState([]);
-  const [accountBalances, setAccountBalances] = useState([]);
-  const [quickActions, setQuickActions]       = useState(EMPTY_QUICK_ACTIONS);
-  const [loading, setLoading]                 = useState(false);
-  const [fetchTrigger, setFetchTrigger]       = useState(0);
+  const [allTransactions, setAllTransactions]   = useState([]);
+  const [accounts, setAccounts]                 = useState([]);
+  const [categories, setCategories]             = useState([]);
+  const [accountBalances, setAccountBalances]   = useState([]);
+  const [quickActions, setQuickActions]         = useState(EMPTY_QUICK_ACTIONS);
+  const [portfolioHoldings, setPortfolioHoldings] = useState([]);
+  const [loading, setLoading]                   = useState(false);
+  const [fetchTrigger, setFetchTrigger]         = useState(0);
 
   useEffect(() => {
     if (!user?.id) {
@@ -78,6 +95,7 @@ export function DataProvider({ children }) {
       setCategories([]);
       setAccountBalances([]);
       setQuickActions(EMPTY_QUICK_ACTIONS);
+      setPortfolioHoldings([]);
       return;
     }
 
@@ -85,13 +103,17 @@ export function DataProvider({ children }) {
     const run = async () => {
       setLoading(true);
       try {
-        const { txns, accs, cats, bals, quickActions: qa } = await fetchAllData(user.id);
+        const [{ txns, accs, cats, bals, quickActions: qa }, holdings] = await Promise.all([
+          fetchAllData(user.id),
+          fetchPortfolioHoldings(),
+        ]);
         if (!cancelled) {
           setAllTransactions(txns);
           setAccounts(accs);
           setCategories(cats);
           setAccountBalances(bals);
           setQuickActions(qa);
+          setPortfolioHoldings(holdings);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -105,7 +127,11 @@ export function DataProvider({ children }) {
   const refetch = () => setFetchTrigger(t => t + 1);
 
   return (
-    <DataContext.Provider value={{ allTransactions, accounts, categories, accountBalances, quickActions, loading, refetch }}>
+    <DataContext.Provider value={{
+      allTransactions, accounts, categories, accountBalances, quickActions,
+      portfolioHoldings,
+      loading, refetch,
+    }}>
       {children}
     </DataContext.Provider>
   );

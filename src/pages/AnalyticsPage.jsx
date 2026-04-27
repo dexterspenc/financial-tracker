@@ -10,6 +10,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointE
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
+import { holdingsToOverrides } from '../utils/portfolioOverrides';
 import { useBudgets } from '../hooks/useBudgets';
 import AnalyticsTabs from '../components/AnalyticsTabs.jsx';
 import AIAdvisor from '../components/AIAdvisor.jsx';
@@ -19,7 +20,7 @@ import './AnalyticsPage.css';
 function AnalyticsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { allTransactions, accounts, accountBalances, loading } = useData();
+  const { allTransactions, accounts, accountBalances, portfolioHoldings, loading } = useData();
   const { fetchBudgets } = useBudgets();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -114,6 +115,58 @@ function AnalyticsPage() {
 
     return { totalAssets, totalCCLiabilities, netWorth };
   }, [accounts, accountBalances, allTransactions]);
+
+  // Live portfolio overrides: account name → current_value from Mini-Aladdin
+  const investmentOverrides = useMemo(
+    () => holdingsToOverrides(portfolioHoldings),
+    [portfolioHoldings]
+  );
+
+  // Delta between portfolio values and txn-based values for the 3 overridden accounts.
+  // Used to adjust both analytics.accountBalances.Investment and netWorthBreakdown.
+  const investmentDelta = useMemo(() => {
+    if (Object.keys(investmentOverrides).length === 0) return 0;
+    const txnBased = {};
+    Object.keys(investmentOverrides).forEach(name => {
+      txnBased[name] = openingBalances.byName[name] || 0;
+    });
+    allTransactions.forEach(txn => {
+      if (txn.account in txnBased) {
+        txnBased[txn.account] += (txn.credit || 0) - (txn.debit || 0);
+      }
+    });
+    return Object.entries(investmentOverrides).reduce(
+      (sum, [name, portfolioVal]) => sum + portfolioVal - (txnBased[name] || 0),
+      0
+    );
+  }, [investmentOverrides, openingBalances, allTransactions]);
+
+  // analytics with Investment purpose balance replaced by live portfolio total
+  const adjustedAnalytics = useMemo(() => {
+    if (investmentDelta === 0) return analytics;
+    const newInvestment = (analytics.accountBalances.Investment || 0) + investmentDelta;
+    return {
+      ...analytics,
+      accountBalances: { ...analytics.accountBalances, Investment: newInvestment },
+      totalNetWorth: analytics.totalNetWorth + investmentDelta,
+    };
+  }, [analytics, investmentDelta]);
+
+  // netWorthBreakdown with totalAssets/netWorth adjusted for portfolio overrides
+  const adjustedNetWorthBreakdown = useMemo(() => {
+    if (!netWorthBreakdown || investmentDelta === 0) return netWorthBreakdown;
+    return {
+      ...netWorthBreakdown,
+      totalAssets: netWorthBreakdown.totalAssets + investmentDelta,
+      netWorth: netWorthBreakdown.netWorth + investmentDelta,
+    };
+  }, [netWorthBreakdown, investmentDelta]);
+
+  // Accounts tab: balances with live portfolio values applied
+  const effectiveAccountsBalances = useMemo(() => {
+    if (Object.keys(investmentOverrides).length === 0) return accountsData.balances;
+    return { ...accountsData.balances, ...investmentOverrides };
+  }, [accountsData.balances, investmentOverrides]);
 
   useEffect(() => {
     if (allTransactions.length > 0) {
@@ -1130,32 +1183,32 @@ function AnalyticsPage() {
 
               <div className="allocation-card">
                 <h2>🏦 Asset Allocation</h2>
-                {netWorthBreakdown ? (
+                {adjustedNetWorthBreakdown ? (
                   <div className="allocation-networth">
                     <div className="allocation-networth-row">
                       <span>Total Aset</span>
-                      <strong>Rp {netWorthBreakdown.totalAssets.toLocaleString('id-ID')}</strong>
+                      <strong>Rp {adjustedNetWorthBreakdown.totalAssets.toLocaleString('id-ID')}</strong>
                     </div>
-                    {netWorthBreakdown.totalCCLiabilities > 0 && (
+                    {adjustedNetWorthBreakdown.totalCCLiabilities > 0 && (
                       <div className="allocation-networth-row cc-liability-row">
                         <span>Tagihan CC</span>
-                        <strong>−Rp {netWorthBreakdown.totalCCLiabilities.toLocaleString('id-ID')}</strong>
+                        <strong>−Rp {adjustedNetWorthBreakdown.totalCCLiabilities.toLocaleString('id-ID')}</strong>
                       </div>
                     )}
                     <div className="allocation-networth-row allocation-networth-total">
                       <span>Net Worth</span>
-                      <strong>Rp {netWorthBreakdown.netWorth.toLocaleString('id-ID')}</strong>
+                      <strong>Rp {adjustedNetWorthBreakdown.netWorth.toLocaleString('id-ID')}</strong>
                     </div>
                   </div>
                 ) : (
                   <div className="allocation-total">
-                    Total Net Worth: <strong>Rp {analytics.totalNetWorth.toLocaleString('id-ID')}</strong>
+                    Total Net Worth: <strong>Rp {adjustedAnalytics.totalNetWorth.toLocaleString('id-ID')}</strong>
                   </div>
                 )}
                 <div className="allocation-list">
-                  {Object.entries(analytics.accountBalances).map(([purpose, amount]) => {
-                    const percentage = analytics.totalNetWorth > 0
-                      ? (amount / analytics.totalNetWorth * 100).toFixed(1)
+                  {Object.entries(adjustedAnalytics.accountBalances).map(([purpose, amount]) => {
+                    const percentage = adjustedAnalytics.totalNetWorth > 0
+                      ? (amount / adjustedAnalytics.totalNetWorth * 100).toFixed(1)
                       : 0;
                     return (
                       <div key={purpose} className="allocation-item">
@@ -1246,7 +1299,7 @@ function AnalyticsPage() {
 
                 {Object.entries(accountsByPurpose).map(([purpose, accountNames]) => {
                   const purposeTotal = accountNames.reduce((sum, acc) =>
-                    sum + (accountsData.balances[acc] || 0), 0
+                    sum + (effectiveAccountsBalances[acc] || 0), 0
                   );
 
                   return (
@@ -1260,7 +1313,7 @@ function AnalyticsPage() {
 
                       <div className="accounts-list">
                         {accountNames.map(account => {
-                          const balance = accountsData.balances[account] || 0;
+                          const balance = effectiveAccountsBalances[account] || 0;
                           const percentage = purposeTotal > 0 ? (balance / purposeTotal * 100) : 0;
 
                           return (
@@ -1452,7 +1505,7 @@ function AnalyticsPage() {
                       <div className="modal-balance">
                         <div className="modal-label">Current Balance</div>
                         <div className="modal-value">
-                          Rp {(accountsData.balances[accountsData.selectedAccount] || 0).toLocaleString('id-ID')}
+                          Rp {(effectiveAccountsBalances[accountsData.selectedAccount] || 0).toLocaleString('id-ID')}
                         </div>
                       </div>
                       <div className="modal-info">
