@@ -1337,7 +1337,7 @@ function AnalyticsPage() {
                             )}
                             {acc.credit_limit && (
                               <span className="cc-detail-info">
-                                Limit: Rp {Number(acc.credit_limit).toLocaleString('id-ID')}
+                                Limit: Rp {Number(acc.credit_limit).toLocaleString('id-ID')} · Sisa: Rp {(Number(acc.credit_limit) - bill).toLocaleString('id-ID')}
                               </span>
                             )}
                             {acc.statement_date && acc.due_date && (

@@ -160,6 +160,11 @@ function HomePage() {
                           {bill > 0 ? Math.min(100, (bill / Number(a.credit_limit) * 100)).toFixed(0) : 0}% dari Rp {Number(a.credit_limit).toLocaleString('id-ID')}
                         </div>
                       )}
+                      {!hideBalance && a.credit_limit && (
+                        <div className="cc-sisa-info">
+                          Sisa: Rp {(Number(a.credit_limit) - bill).toLocaleString('id-ID')}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
