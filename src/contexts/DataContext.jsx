@@ -108,21 +108,22 @@ export function DataProvider({ children }) {
     const run = async () => {
       setLoading(true);
       try {
-        const [{ txns, accs, cats, bals, quickActions: qa }, holdings] = await Promise.all([
-          fetchAllData(user.id),
-          fetchPortfolioHoldings(user.id),
-        ]);
+        const { txns, accs, cats, bals, quickActions: qa } = await fetchAllData(user.id);
         if (!cancelled) {
           setAllTransactions(txns);
           setAccounts(accs);
           setCategories(cats);
           setAccountBalances(bals);
           setQuickActions(qa);
-          setPortfolioHoldings(holdings);
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
+
+      // Portfolio fetch runs in background — does not block app render
+      fetchPortfolioHoldings(user.id).then(holdings => {
+        if (!cancelled) setPortfolioHoldings(holdings);
+      });
     };
 
     run();
