@@ -12,7 +12,8 @@ import { toast } from '../components/ui/Toast';
 import './SettingsPage.css';
 
 const PURPOSES = ['Living', 'Playing', 'Saving', 'Investment'];
-const CURRENCIES = ['IDR', 'USD', 'SGD', 'EUR', 'AUD', 'GBP', 'JPY', 'MYR', 'CNY', 'HKD'];
+// BCA Forex Pocket currencies, minus SAR & AED (not published by ECB/frankfurter, so no IDR rate)
+const CURRENCIES = ['IDR', 'USD', 'SGD', 'CNY', 'EUR', 'AUD', 'JPY', 'GBP', 'HKD', 'MYR', 'THB', 'CHF', 'CAD', 'DKK', 'NZD', 'SEK', 'KRW'];
 const TABS = [
   { id: 'profil',         label: 'Profil',          Icon: User      },
   { id: 'akun',           label: 'Kelola Akun',      Icon: Wallet    },
