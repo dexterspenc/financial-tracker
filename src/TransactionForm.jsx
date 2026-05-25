@@ -15,10 +15,23 @@ const EMPTY_FORM = {
   accountId: '',
   categoryId: '',
   amount: '',
+  amountTo: '', // destination amount for cross-currency transfers
   flowType: 'Expense', // 'Income' | 'Expense'
   note: '',
   fromAccountId: '',
   toAccountId: '',
+};
+
+// Strip input to a numeric string: integer-only for IDR, one decimal point allowed for valas
+const cleanAmount = (raw, currency) =>
+  (currency && currency !== 'IDR')
+    ? raw.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
+    : raw.replace(/\D/g, '');
+
+// Display value for an amount input: grouped thousands for IDR, raw for valas (preserves decimals)
+const displayAmount = (val, currency) => {
+  if (!val) return '';
+  return (currency && currency !== 'IDR') ? val : Number(val).toLocaleString('id-ID');
 };
 
 function TransactionForm() {
@@ -93,9 +106,19 @@ function TransactionForm() {
 
   const submitTransfer = async () => {
     const month = format(new Date(formData.date + 'T00:00:00'), 'yyyy-MM-01');
-    const amount = parseFloat(formData.amount) || 0;
+    const fromAcc = accounts.find(a => a.id === formData.fromAccountId);
+    const toAcc = accounts.find(a => a.id === formData.toAccountId);
+    const fromCur = fromAcc?.currency || 'IDR';
+    const toCur = toAcc?.currency || 'IDR';
+    const crossCurrency = fromCur !== toCur;
 
-    // Row 1: Transfer-out (money leaves source account) → debit
+    // Amount leaving the source account, in the source account's currency
+    const amountOut = parseFloat(formData.amount) || 0;
+    // Amount arriving at the destination, in the destination's currency.
+    // Same-currency transfers reuse the single amount; cross-currency uses the second field.
+    const amountIn = crossCurrency ? (parseFloat(formData.amountTo) || 0) : amountOut;
+
+    // Row 1: Transfer-out (money leaves source account) → debit (source currency)
     const debitRow = {
       user_id: user.id,
       date: formData.date,
@@ -103,13 +126,13 @@ function TransactionForm() {
       account_id: formData.fromAccountId,
       category_id: formData.categoryId,
       flow_type: 'Transfer',
-      debit: amount,
+      debit: amountOut,
       credit: 0,
       type: 'Transfer',
       note: formData.note || null,
     };
 
-    // Row 2: Transfer-in (money arrives at destination account) → credit
+    // Row 2: Transfer-in (money arrives at destination account) → credit (dest currency)
     const creditRow = {
       user_id: user.id,
       date: formData.date,
@@ -118,7 +141,7 @@ function TransactionForm() {
       category_id: formData.categoryId,
       flow_type: 'Transfer',
       debit: 0,
-      credit: amount,
+      credit: amountIn,
       type: 'Transfer',
       note: formData.note || null,
     };
@@ -142,12 +165,21 @@ function TransactionForm() {
     try { await refetch(); } catch {}
   };
 
-  // Group accounts by purpose for <optgroup> rendering
-  const accountsByPurpose = accounts.reduce((groups, acc) => {
-    if (!groups[acc.purpose]) groups[acc.purpose] = [];
-    groups[acc.purpose].push(acc);
-    return groups;
-  }, {});
+  // Normal transactions exclude valas accounts (storage-only, funded via transfer)
+  const accountsByPurpose = accounts
+    .filter(acc => !acc.currency || acc.currency === 'IDR')
+    .reduce((groups, acc) => {
+      if (!groups[acc.purpose]) groups[acc.purpose] = [];
+      groups[acc.purpose].push(acc);
+      return groups;
+    }, {});
+
+  // Cross-currency transfer detection
+  const fromAcc = accounts.find(a => a.id === formData.fromAccountId);
+  const toAcc = accounts.find(a => a.id === formData.toAccountId);
+  const fromCur = fromAcc?.currency || 'IDR';
+  const toCur = toAcc?.currency || 'IDR';
+  const crossCurrency = mode === 'transfer' && fromAcc && toAcc && fromCur !== toCur;
 
   // Filter categories by flow type
   const incomeCategories    = categories.filter(c => c.flow_type === 'Income');
@@ -283,7 +315,9 @@ function TransactionForm() {
               <select name="fromAccountId" value={formData.fromAccountId} onChange={handleChange} required>
                 <option value="">Select Source Account</option>
                 {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name}{acc.currency && acc.currency !== 'IDR' ? ` (${acc.currency})` : ''}
+                  </option>
                 ))}
               </select>
             </div>
@@ -295,23 +329,55 @@ function TransactionForm() {
               <select name="toAccountId" value={formData.toAccountId} onChange={handleChange} required>
                 <option value="">Select Destination Account</option>
                 {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name}{acc.currency && acc.currency !== 'IDR' ? ` (${acc.currency})` : ''}
+                  </option>
                 ))}
               </select>
             </div>
 
-            <div className="form-group">
-              <label>💵 Amount (Rp)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                name="amount"
-                value={formData.amount ? Number(formData.amount).toLocaleString('id-ID') : ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value.replace(/\D/g, '') }))}
-                placeholder="0"
-                required
-              />
-            </div>
+            {crossCurrency ? (
+              <>
+                <div className="form-group">
+                  <label>💸 Jumlah Keluar ({fromCur})</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    name="amount"
+                    value={displayAmount(formData.amount, fromCur)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, amount: cleanAmount(e.target.value, fromCur) }))}
+                    placeholder="0"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>💰 Jumlah Masuk ({toCur})</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    name="amountTo"
+                    value={displayAmount(formData.amountTo, toCur)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, amountTo: cleanAmount(e.target.value, toCur) }))}
+                    placeholder="0"
+                    required
+                  />
+                </div>
+                <p className="subtitle">Isi sesuai mutasi myBCA — nominal keluar & masuk apa adanya.</p>
+              </>
+            ) : (
+              <div className="form-group">
+                <label>💵 Amount ({fromCur})</label>
+                <input
+                  type="text"
+                  inputMode={fromCur === 'IDR' ? 'numeric' : 'decimal'}
+                  name="amount"
+                  value={displayAmount(formData.amount, fromCur)}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amount: cleanAmount(e.target.value, fromCur) }))}
+                  placeholder="0"
+                  required
+                />
+              </div>
+            )}
 
             <div className="form-group">
               <label>📂 Kategori</label>

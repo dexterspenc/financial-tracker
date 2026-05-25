@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 import { normalizeTxn } from '../utils/normalizeTxn';
+import { fetchRates } from '../utils/exchangeRates';
 
 const DataContext = createContext(null);
 
@@ -46,7 +47,7 @@ const fetchAllData = async (userId) => {
       .order('created_at', { ascending: false }),
     supabase
       .from('accounts')
-      .select('id, name, purpose, sort_order, is_active, is_credit_account, credit_limit, statement_date, due_date')
+      .select('id, name, purpose, sort_order, is_active, is_credit_account, credit_limit, statement_date, due_date, currency')
       .eq('user_id', userId)
       .eq('is_active', true)
       .order('sort_order'),
@@ -58,7 +59,7 @@ const fetchAllData = async (userId) => {
       .order('sort_order'),
     supabase
       .from('account_balances')
-      .select('*, accounts(id, name, purpose, is_credit_account, credit_limit, statement_date, due_date)')
+      .select('*, accounts(id, name, purpose, is_credit_account, credit_limit, statement_date, due_date, currency)')
       .eq('user_id', userId),
     supabase
       .from('user_settings')
@@ -90,6 +91,8 @@ export function DataProvider({ children }) {
   const [accountBalances, setAccountBalances]   = useState([]);
   const [quickActions, setQuickActions]         = useState(EMPTY_QUICK_ACTIONS);
   const [portfolioHoldings, setPortfolioHoldings] = useState([]);
+  const [exchangeRates, setExchangeRates]       = useState({ IDR: 1 });
+  const [ratesDate, setRatesDate]               = useState(null);
   const [loading, setLoading]                   = useState(false);
   const [fetchTrigger, setFetchTrigger]         = useState(0);
 
@@ -101,6 +104,8 @@ export function DataProvider({ children }) {
       setAccountBalances([]);
       setQuickActions(EMPTY_QUICK_ACTIONS);
       setPortfolioHoldings([]);
+      setExchangeRates({ IDR: 1 });
+      setRatesDate(null);
       return;
     }
 
@@ -130,12 +135,32 @@ export function DataProvider({ children }) {
     return () => { cancelled = true; };
   }, [user?.id, fetchTrigger]);
 
+  // Fetch live FX rates whenever the set of non-IDR account currencies changes
+  useEffect(() => {
+    const currencies = [...new Set(
+      accounts.map(a => a.currency).filter(c => c && c !== 'IDR')
+    )];
+    if (currencies.length === 0) {
+      setExchangeRates({ IDR: 1 });
+      setRatesDate(null);
+      return;
+    }
+    let cancelled = false;
+    fetchRates(currencies).then(({ rates, date }) => {
+      if (!cancelled) {
+        setExchangeRates(rates);
+        setRatesDate(date);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [accounts]);
+
   const refetch = () => setFetchTrigger(t => t + 1);
 
   return (
     <DataContext.Provider value={{
       allTransactions, accounts, categories, accountBalances, quickActions,
-      portfolioHoldings,
+      portfolioHoldings, exchangeRates, ratesDate,
       loading, refetch,
     }}>
       {children}

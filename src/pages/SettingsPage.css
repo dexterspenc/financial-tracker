@@ -507,3 +507,17 @@
   border: 1px solid #fecaca;
   vertical-align: middle;
 }
+
+.valas-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-full);
+  background: var(--brand-50, #eff6ff);
+  color: var(--brand-600, #2563eb);
+  border: 1px solid var(--brand-200, #bfdbfe);
+  vertical-align: middle;
+}

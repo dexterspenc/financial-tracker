@@ -522,6 +522,19 @@
   font-size: 15px;
 }
 
+.account-balance-idr {
+  font-weight: 500;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.rate-note-analytics {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
 .account-bar {
   height: 8px;
   background: #e2e8f0;

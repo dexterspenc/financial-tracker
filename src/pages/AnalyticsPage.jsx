@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { holdingsToOverrides } from '../utils/portfolioOverrides';
+import { toIDR } from '../utils/exchangeRates';
 import { useBudgets } from '../hooks/useBudgets';
 import AnalyticsTabs from '../components/AnalyticsTabs.jsx';
 import AIAdvisor from '../components/AIAdvisor.jsx';
@@ -20,7 +21,7 @@ import './AnalyticsPage.css';
 function AnalyticsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { allTransactions, accounts, accountBalances, portfolioHoldings, loading } = useData();
+  const { allTransactions, accounts, accountBalances, portfolioHoldings, exchangeRates, ratesDate, loading } = useData();
   const { fetchBudgets } = useBudgets();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -116,6 +117,33 @@ function AnalyticsPage() {
     return { totalAssets, totalCCLiabilities, netWorth };
   }, [accounts, accountBalances, allTransactions]);
 
+  // Valas accounts hold native-currency balances. The raw purpose/net-worth
+  // aggregations sum debit/credit treating every amount as IDR, so for each
+  // valas account we compute a correction delta = (IDR value) − (native value
+  // already counted) and fold it into the purpose totals and net worth.
+  const valasAdjustment = useMemo(() => {
+    const result = { byPurpose: {}, total: 0 };
+    const valasAccounts = accounts.filter(a => a.currency && a.currency !== 'IDR');
+    if (valasAccounts.length === 0) return result;
+
+    const nativeById = {};
+    valasAccounts.forEach(a => { nativeById[a.id] = 0; });
+    accountBalances.forEach(ab => {
+      if (ab.account_id in nativeById) nativeById[ab.account_id] += Number(ab.balance) || 0;
+    });
+    allTransactions.forEach(t => {
+      if (t.accountId in nativeById) nativeById[t.accountId] += (t.credit || 0) - (t.debit || 0);
+    });
+
+    valasAccounts.forEach(a => {
+      const native = nativeById[a.id] || 0;
+      const delta = toIDR(native, a.currency, exchangeRates) - native;
+      result.byPurpose[a.purpose] = (result.byPurpose[a.purpose] || 0) + delta;
+      result.total += delta;
+    });
+    return result;
+  }, [accounts, accountBalances, allTransactions, exchangeRates]);
+
   // Live portfolio overrides: account name → current_value from Mini-Aladdin
   const investmentOverrides = useMemo(
     () => holdingsToOverrides(portfolioHoldings),
@@ -141,26 +169,33 @@ function AnalyticsPage() {
     );
   }, [investmentOverrides, openingBalances, allTransactions]);
 
-  // analytics with Investment purpose balance replaced by live portfolio total
+  // analytics with Investment balance replaced by live portfolio total and
+  // valas purpose balances converted to IDR
   const adjustedAnalytics = useMemo(() => {
-    if (investmentDelta === 0) return analytics;
-    const newInvestment = (analytics.accountBalances.Investment || 0) + investmentDelta;
+    if (investmentDelta === 0 && valasAdjustment.total === 0) return analytics;
+    const newBalances = { ...analytics.accountBalances };
+    newBalances.Investment = (newBalances.Investment || 0) + investmentDelta;
+    Object.entries(valasAdjustment.byPurpose).forEach(([purpose, delta]) => {
+      newBalances[purpose] = (newBalances[purpose] || 0) + delta;
+    });
     return {
       ...analytics,
-      accountBalances: { ...analytics.accountBalances, Investment: newInvestment },
-      totalNetWorth: analytics.totalNetWorth + investmentDelta,
+      accountBalances: newBalances,
+      totalNetWorth: analytics.totalNetWorth + investmentDelta + valasAdjustment.total,
     };
-  }, [analytics, investmentDelta]);
+  }, [analytics, investmentDelta, valasAdjustment]);
 
-  // netWorthBreakdown with totalAssets/netWorth adjusted for portfolio overrides
+  // netWorthBreakdown with totalAssets/netWorth adjusted for portfolio overrides + valas
   const adjustedNetWorthBreakdown = useMemo(() => {
-    if (!netWorthBreakdown || investmentDelta === 0) return netWorthBreakdown;
+    if (!netWorthBreakdown) return netWorthBreakdown;
+    const extra = investmentDelta + valasAdjustment.total;
+    if (extra === 0) return netWorthBreakdown;
     return {
       ...netWorthBreakdown,
-      totalAssets: netWorthBreakdown.totalAssets + investmentDelta,
-      netWorth: netWorthBreakdown.netWorth + investmentDelta,
+      totalAssets: netWorthBreakdown.totalAssets + extra,
+      netWorth: netWorthBreakdown.netWorth + extra,
     };
-  }, [netWorthBreakdown, investmentDelta]);
+  }, [netWorthBreakdown, investmentDelta, valasAdjustment]);
 
   // Accounts tab: balances with live portfolio values applied
   const effectiveAccountsBalances = useMemo(() => {
@@ -1088,6 +1123,11 @@ function AnalyticsPage() {
     return groups;
   }, {});
 
+  // Account lookup by name + IDR-converted balance (valas accounts hold native amounts)
+  const accountByName = accounts.reduce((m, a) => { m[a.name] = a; return m; }, {});
+  const accountCurrency = (name) => accountByName[name]?.currency || 'IDR';
+  const balanceInIDR = (name) => toIDR(effectiveAccountsBalances[name] || 0, accountCurrency(name), exchangeRates);
+
   return (
     <div className="analytics-page">
       <div className="page-header">
@@ -1296,10 +1336,13 @@ function AnalyticsPage() {
             <>
               <div className="accounts-balance-card">
                 <h2>🏦 Account Balances</h2>
+                {ratesDate && accounts.some(a => a.currency && a.currency !== 'IDR') && (
+                  <p className="rate-note-analytics">Kurs valas per {ratesDate} (mid-market)</p>
+                )}
 
                 {Object.entries(accountsByPurpose).map(([purpose, accountNames]) => {
                   const purposeTotal = accountNames.reduce((sum, acc) =>
-                    sum + (effectiveAccountsBalances[acc] || 0), 0
+                    sum + balanceInIDR(acc), 0
                   );
 
                   return (
@@ -1307,14 +1350,17 @@ function AnalyticsPage() {
                       <div className="purpose-header">
                         <span className="purpose-name">{purpose}</span>
                         <span className="purpose-total">
-                          Rp {purposeTotal.toLocaleString('id-ID')}
+                          Rp {Math.round(purposeTotal).toLocaleString('id-ID')}
                         </span>
                       </div>
 
                       <div className="accounts-list">
                         {accountNames.map(account => {
-                          const balance = effectiveAccountsBalances[account] || 0;
-                          const percentage = purposeTotal > 0 ? (balance / purposeTotal * 100) : 0;
+                          const currency = accountCurrency(account);
+                          const isValas = currency !== 'IDR';
+                          const nativeBal = effectiveAccountsBalances[account] || 0;
+                          const idrBal = balanceInIDR(account);
+                          const percentage = purposeTotal > 0 ? (idrBal / purposeTotal * 100) : 0;
 
                           return (
                             <div
@@ -1328,7 +1374,12 @@ function AnalyticsPage() {
                               <div className="account-info">
                                 <span className="account-name">{account}</span>
                                 <span className="account-balance">
-                                  Rp {balance.toLocaleString('id-ID')}
+                                  {isValas
+                                    ? `${currency} ${nativeBal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                    : `Rp ${nativeBal.toLocaleString('id-ID')}`}
+                                  {isValas && (
+                                    <span className="account-balance-idr"> ≈ Rp {Math.round(idrBal).toLocaleString('id-ID')}</span>
+                                  )}
                                 </span>
                               </div>
                               <div className="account-bar">
@@ -1505,8 +1556,13 @@ function AnalyticsPage() {
                       <div className="modal-balance">
                         <div className="modal-label">Current Balance</div>
                         <div className="modal-value">
-                          Rp {(effectiveAccountsBalances[accountsData.selectedAccount] || 0).toLocaleString('id-ID')}
+                          {accountCurrency(accountsData.selectedAccount) !== 'IDR'
+                            ? `${accountCurrency(accountsData.selectedAccount)} ${(effectiveAccountsBalances[accountsData.selectedAccount] || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : `Rp ${(effectiveAccountsBalances[accountsData.selectedAccount] || 0).toLocaleString('id-ID')}`}
                         </div>
+                        {accountCurrency(accountsData.selectedAccount) !== 'IDR' && (
+                          <div className="modal-label">≈ Rp {Math.round(balanceInIDR(accountsData.selectedAccount)).toLocaleString('id-ID')}</div>
+                        )}
                       </div>
                       <div className="modal-info">
                         Click History tab to see all transactions for this account

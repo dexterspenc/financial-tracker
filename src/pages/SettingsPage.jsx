@@ -12,6 +12,7 @@ import { toast } from '../components/ui/Toast';
 import './SettingsPage.css';
 
 const PURPOSES = ['Living', 'Playing', 'Saving', 'Investment'];
+const CURRENCIES = ['IDR', 'USD', 'SGD', 'EUR', 'AUD', 'GBP', 'JPY', 'MYR', 'CNY', 'HKD'];
 const TABS = [
   { id: 'profil',         label: 'Profil',          Icon: User      },
   { id: 'akun',           label: 'Kelola Akun',      Icon: Wallet    },
@@ -148,7 +149,7 @@ function AkunSection({ userId }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', purpose: 'Living', sort_order: 99, is_credit_account: false, credit_limit: '', statement_date: '', due_date: '' });
+  const [addForm, setAddForm] = useState({ name: '', purpose: 'Living', sort_order: 99, currency: 'IDR', is_credit_account: false, credit_limit: '', statement_date: '', due_date: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -166,6 +167,7 @@ function AkunSection({ userId }) {
     setEditingId(acc.id);
     setEditForm({
       name: acc.name, purpose: acc.purpose, sort_order: acc.sort_order,
+      currency: acc.currency || 'IDR',
       is_credit_account: acc.is_credit_account || false,
       credit_limit: acc.credit_limit ?? '',
       statement_date: acc.statement_date ?? '',
@@ -181,6 +183,7 @@ function AkunSection({ userId }) {
         name: editForm.name,
         purpose: editForm.purpose,
         sort_order: Number(editForm.sort_order),
+        currency: editForm.currency || 'IDR',
         is_credit_account: editForm.is_credit_account,
         credit_limit: editForm.is_credit_account && editForm.credit_limit !== '' ? Number(editForm.credit_limit) : null,
         statement_date: editForm.is_credit_account && editForm.statement_date !== '' ? Number(editForm.statement_date) : null,
@@ -216,6 +219,7 @@ function AkunSection({ userId }) {
         name: addForm.name.trim(),
         purpose: addForm.purpose,
         sort_order: Number(addForm.sort_order),
+        currency: addForm.currency || 'IDR',
         is_active: true,
         is_credit_account: addForm.is_credit_account,
         credit_limit: addForm.is_credit_account && addForm.credit_limit !== '' ? Number(addForm.credit_limit) : null,
@@ -226,7 +230,7 @@ function AkunSection({ userId }) {
     if (error) { toast.error('Gagal menambah akun'); return; }
     toast.success('Akun ditambahkan');
     setShowAdd(false);
-    setAddForm({ name: '', purpose: 'Living', sort_order: 99, is_credit_account: false, credit_limit: '', statement_date: '', due_date: '' });
+    setAddForm({ name: '', purpose: 'Living', sort_order: 99, currency: 'IDR', is_credit_account: false, credit_limit: '', statement_date: '', due_date: '' });
     load();
     refetch().catch(() => {});
   };
@@ -258,6 +262,19 @@ function AkunSection({ userId }) {
             >
               {PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
+            <select
+              className="settings-select"
+              value={addForm.currency}
+              onChange={(e) => setAddForm({ ...addForm, currency: e.target.value })}
+              title="Mata uang akun"
+            >
+              {CURRENCIES.map(c => <option key={c} value={c}>{c === 'IDR' ? 'IDR (Rupiah)' : c}</option>)}
+            </select>
+            {addForm.currency !== 'IDR' && (
+              <p className="settings-helper">
+                Akun valas: saldo dicatat dalam {addForm.currency}, ditampilkan + ekuivalen IDR pakai kurs harian.
+              </p>
+            )}
             <label className="cc-toggle">
               <input
                 type="checkbox"
@@ -331,6 +348,14 @@ function AkunSection({ userId }) {
                   >
                     {PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
+                  <select
+                    className="settings-select"
+                    value={editForm.currency}
+                    onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })}
+                    title="Mata uang akun"
+                  >
+                    {CURRENCIES.map(c => <option key={c} value={c}>{c === 'IDR' ? 'IDR (Rupiah)' : c}</option>)}
+                  </select>
                   <label className="cc-toggle">
                     <input
                       type="checkbox"
@@ -388,6 +413,7 @@ function AkunSection({ userId }) {
                     <div className="settings-item-name">
                       {acc.name}
                       {acc.is_credit_account && <span className="cc-badge">CC</span>}
+                      {acc.currency && acc.currency !== 'IDR' && <span className="valas-badge">{acc.currency}</span>}
                     </div>
                     <div className="settings-item-sub">{acc.purpose}</div>
                   </div>

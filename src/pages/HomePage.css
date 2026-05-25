@@ -374,6 +374,23 @@
   border-color: #fecaca;
 }
 
+.valas-account-card {
+  border-color: var(--brand-200, #bfdbfe);
+}
+
+.account-balance-idr {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.rate-note {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 /* ─── Legacy subtitle class (keep for AddPage) ───────────── */
 .subtitle {
   color: var(--text-muted);

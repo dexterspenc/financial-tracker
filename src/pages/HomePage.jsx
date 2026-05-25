@@ -4,11 +4,12 @@ import { format } from 'date-fns';
 import { Eye, EyeOff, Plus } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { holdingsToOverrides } from '../utils/portfolioOverrides';
+import { toIDR } from '../utils/exchangeRates';
 import './HomePage.css';
 
 function HomePage() {
   const navigate = useNavigate();
-  const { allTransactions, accountBalances, accounts, portfolioHoldings, loading } = useData();
+  const { allTransactions, accountBalances, accounts, portfolioHoldings, exchangeRates, ratesDate, loading } = useData();
 
   const investmentOverrides = useMemo(
     () => holdingsToOverrides(portfolioHoldings),
@@ -53,9 +54,10 @@ function HomePage() {
     accountBalances.forEach(ab => {
       map[ab.account_id] = Number(ab.balance) || 0;
     });
-    // Seed CC accounts at 0 even if they have no account_balances entry
+    // Seed CC and valas accounts at 0 even if they have no account_balances entry
     accounts.forEach(a => {
-      if (a.is_credit_account && !(a.id in map)) map[a.id] = 0;
+      const isValas = a.currency && a.currency !== 'IDR';
+      if ((a.is_credit_account || isValas) && !(a.id in map)) map[a.id] = 0;
     });
     allTransactions.forEach(txn => {
       if (txn.accountId && txn.accountId in map) {
@@ -138,14 +140,20 @@ function HomePage() {
             </button>
           </div>
 
-          {accountBalances.length > 0 && (
+          {(accountBalances.length > 0 || accounts.some(a => a.is_credit_account || (a.currency && a.currency !== 'IDR'))) && (
             <div className="accounts-section">
               <div className="section-header">
                 <h2>Saldo Akun</h2>
+                {ratesDate && accounts.some(a => a.currency && a.currency !== 'IDR') && (
+                  <span className="rate-note">kurs {ratesDate}</span>
+                )}
               </div>
               <div className="accounts-grid">
                 {accountBalances
-                  .filter(ab => !accountsById[ab.account_id]?.is_credit_account)
+                  .filter(ab => {
+                    const a = accountsById[ab.account_id];
+                    return !a?.is_credit_account && !(a?.currency && a.currency !== 'IDR');
+                  })
                   .map(ab => (
                     <div key={ab.id} className="account-balance-card">
                       <div className="account-balance-name">{ab.accounts?.name}</div>
@@ -155,6 +163,27 @@ function HomePage() {
                       </div>
                     </div>
                   ))}
+
+                {accounts
+                  .filter(a => !a.is_credit_account && a.currency && a.currency !== 'IDR')
+                  .map(a => {
+                    const native = runningBalances[a.id] ?? 0;
+                    const idr = toIDR(native, a.currency, exchangeRates);
+                    return (
+                      <div key={a.id} className="account-balance-card valas-account-card">
+                        <div className="account-balance-name">{a.name}</div>
+                        <div className="account-balance-purpose">{a.purpose}</div>
+                        <div className="account-balance-amount">
+                          {hideBalance
+                            ? '••••••'
+                            : `${a.currency} ${native.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </div>
+                        <div className="account-balance-idr">
+                          {hideBalance ? 'Rp ••••••' : `≈ Rp ${Math.round(idr).toLocaleString('id-ID')}`}
+                        </div>
+                      </div>
+                    );
+                  })}
 
                 {accounts.filter(a => a.is_credit_account).map(a => {
                   const runningBal = runningBalances[a.id] ?? 0;
