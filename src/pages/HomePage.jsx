@@ -144,8 +144,8 @@ function HomePage() {
             <div className="accounts-section">
               <div className="section-header">
                 <h2>Saldo Akun</h2>
-                {ratesDate && accounts.some(a => a.currency && a.currency !== 'IDR') && (
-                  <span className="rate-note">kurs {ratesDate}</span>
+                {accounts.some(a => a.currency && a.currency !== 'IDR') && (
+                  <span className="rate-note">{ratesDate ? `kurs ${ratesDate}` : 'memuat kurs…'}</span>
                 )}
               </div>
               <div className="accounts-grid">

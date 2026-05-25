@@ -1336,8 +1336,10 @@ function AnalyticsPage() {
             <>
               <div className="accounts-balance-card">
                 <h2>🏦 Account Balances</h2>
-                {ratesDate && accounts.some(a => a.currency && a.currency !== 'IDR') && (
-                  <p className="rate-note-analytics">Kurs valas per {ratesDate} (mid-market)</p>
+                {accounts.some(a => a.currency && a.currency !== 'IDR') && (
+                  <p className="rate-note-analytics">
+                    {ratesDate ? `Kurs valas per ${ratesDate} (mid-market)` : 'Memuat kurs valas…'}
+                  </p>
                 )}
 
                 {Object.entries(accountsByPurpose).map(([purpose, accountNames]) => {
