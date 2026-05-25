@@ -1,6 +1,6 @@
 # PROGRESS.md — SaaS Rebuild Progress Log
 
-Last updated: 2026-04-01 (Session 9 — Migration, debit/credit fix, History grouping, Transaksi Hari Ini)
+Last updated: 2026-05-25 (Session 10 — Valas accounts, transfer integrity, perf, code-quality)
 
 ---
 
@@ -126,7 +126,8 @@ Last updated: 2026-04-01 (Session 9 — Migration, debit/credit fix, History gro
 - ❌ Budget & Data: migrate budgets from localStorage → Supabase `budgets` table
 - **Files to create/modify:** `src/pages/SettingsPage.jsx`, `src/pages/SettingsPage.css`, update `App.jsx` (+1 route), update `BottomNav.jsx` (+1 item)
 
-### Phase 5 — AI Advisor ❌ (CRITICAL — API key exposed, one component broken)
+### Phase 5 — AI Advisor ✅ RESOLVED (see "P1 — AI Edge Function" above; this audit snapshot is historical)
+> Note: items below were the Session-4 audit findings. All resolved — AI now uses `supabase.functions.invoke('ai-chat')`, Anthropic key lives only in Edge Function secrets, both AI components work.
 - ❌ `supabase/functions/ai-chat/index.ts` — **doesn't exist** — Edge Function not created
 - ❌ `VITE_ANTHROPIC_API_KEY` still in `.env` and used in both AI components — **violates CLAUDE.md API key rules**
 - ⚠️ `AIAdvisorWidget.jsx` (line 93): calls `https://api.anthropic.com/v1/messages` directly — works but wrong target
@@ -214,9 +215,37 @@ Last updated: 2026-04-01 (Session 9 — Migration, debit/credit fix, History gro
 - ✅ Logout button di Onboarding — tombol "Ganti Akun" ditambahkan di OnboardingPage untuk memudahkan ganti akun tanpa harus navigasi ke Settings
 - ✅ Onboarding hint tooltip — hint tips pemilihan akun berdasarkan tujuan ditambahkan di Step 1 onboarding
 
+### P9 — Session 10: Valas Accounts, Transfer Integrity, Perf & Code-Quality (2026-05-25)
+
+**Valas (foreign currency) accounts — storage-only:**
+- ✅ `supabase/migrations/008_valas_support.sql` — adds `currency` (default `IDR`) to `accounts`
+- ✅ `src/utils/exchangeRates.js` — `fetchRates()` (frankfurter.dev, USD pivot, localStorage cache 1h) + `toIDR()` helper
+- ✅ `src/contexts/DataContext.jsx` — exposes `exchangeRates` + `ratesDate`; fetches rates when valas accounts present
+- ✅ `src/pages/SettingsPage.jsx` — currency dropdown (16 BCA Forex Pocket currencies that ECB supports) in add/edit account + valas badge
+- ✅ `src/pages/HomePage.jsx` — valas balance cards show native amount + `≈ Rp` equivalent
+- ✅ `src/pages/AnalyticsPage.jsx` — `valasAdjustment` memo converts valas balances to IDR in purpose totals + net worth; Accounts tab/modal show native + IDR
+- ✅ `src/TransactionForm.jsx` — cross-currency transfer (dual amount fields, out/in); valas excluded from normal-mode account dropdown
+- Decision: native storage, live mid-market rate (not BCA rate), funding via cross-currency transfer. SAR/AED excluded (no ECB rate).
+
+**Transfer integrity fix:**
+- ✅ `src/hooks/useTransactions.js` — `deleteTransferPair(pairId)` deletes both legs
+- ✅ `src/pages/HistoryPage.jsx` — deleting a transfer removes both legs (was: orphaned leg → wrong balances)
+- ✅ `src/components/EditModal.jsx` — editing a transfer syncs date/note to the pair; mirrors amount for same-currency legs
+
+**Performance:**
+- ✅ `src/App.jsx` — routes lazy-loaded via `React.lazy` + `Suspense`; initial JS ~923KB→604KB; Chart.js/tremor deferred to Analytics chunk
+
+**Code quality:**
+- ✅ `src/contexts/DataContext.jsx` — core fetch errors surfaced via toast (was silently swallowed)
+- ✅ Empty best-effort `catch {}` blocks annotated (no-empty)
+- Note: remaining lint warnings (react-refresh/only-export-components, exhaustive-deps, use-before-declare in SettingsPage) are framework/strictness cosmetics, not bugs — deferred intentionally.
+
 ---
 
 ## Known Bugs / In Progress
+
+- ⚠️ **Valas rate-date label** — `kurs <tanggal>` di header Saldo Akun kadang tidak tampil di preview meski konversi jalan; sudah dibuat selalu-render dgn fallback "memuat kurs…" (commit a7b3e0c), perlu konfirmasi di deploy terbaru
+- ⚠️ **Mini-Aladdin API key di client bundle** (`DataContext.jsx`) — `VITE_MINI_ALADDIN_API_KEY` ikut ke browser; ditunda selama deploy ber-PIN, wajib pindah ke Edge Function sebelum publik/multi-user
 
 - ⚠️ **Transfer form: tidak ada kategori selector** — saat mode Transfer, user tidak bisa memilih kategori spesifik (Topup, Tabungan, dll); form langsung pakai kategori 'Transfer' default
 - ⚠️ **ARCHITECTURE.md perlu update lanjutan** — konvensi debit/credit sudah berubah dari Google Sheets (Income=Debit, Expense=Credit) ke SaaS (Income=credit, Expense=debit); schema SQL sudah benar tapi CLAUDE.md Google Sheet Column Map masih pakai konvensi lama sebagai referensi historis
@@ -239,6 +268,6 @@ Last updated: 2026-04-01 (Session 9 — Migration, debit/credit fix, History gro
 - **Dark mode** — belum diimplementasikan; CSS tokens sudah siap untuk extension
 - **PWA setup** — manifest + service worker + offline fallback (belum dikerjakan)
 - **Calendar view** — tampilan transaksi dalam format kalender per bulan (future)
-- **Credit card account support** — jenis akun kartu kredit dengan logika saldo berbeda (future)
+- ~~**Credit card account support**~~ — ✅ DONE (migration 007; saldo CC, limit, statement/due date)
 - **Custom domain** — belum dikonfigurasi di Vercel
 - **Admin dashboard** — monitoring users dan usage (future)
