@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 import { normalizeTxn } from '../utils/normalizeTxn';
 import { fetchRates } from '../utils/exchangeRates';
+import { toast } from '../components/ui/Toast';
 
 const DataContext = createContext(null);
 
@@ -32,13 +33,7 @@ const fetchPortfolioHoldings = async (userId) => {
 
 // Fetch functions defined at module scope — no hook factory imports, no TDZ risk
 const fetchAllData = async (userId) => {
-  const [
-    { data: txns },
-    { data: accs },
-    { data: cats },
-    { data: bals },
-    { data: settings },
-  ] = await Promise.all([
+  const [txnRes, accRes, catRes, balRes, settingsRes] = await Promise.all([
     supabase
       .from('transactions')
       .select(SELECT_TXN)
@@ -68,17 +63,21 @@ const fetchAllData = async (userId) => {
       .single(),
   ]);
 
-  const rawQA = settings?.quick_actions;
+  const rawQA = settingsRes.data?.quick_actions;
   const quickActions = Array.isArray(rawQA) && rawQA.length === 4
     ? rawQA
     : EMPTY_QUICK_ACTIONS;
 
+  // user_settings .single() errors when no row exists yet (new user) — not a real failure
+  const error = txnRes.error || accRes.error || catRes.error || balRes.error || null;
+
   return {
-    txns:         txns ? txns.map(normalizeTxn) : [],
-    accs:         accs ?? [],
-    cats:         cats ?? [],
-    bals:         bals ?? [],
+    txns:         txnRes.data ? txnRes.data.map(normalizeTxn) : [],
+    accs:         accRes.data ?? [],
+    cats:         catRes.data ?? [],
+    bals:         balRes.data ?? [],
     quickActions,
+    error,
   };
 };
 
@@ -113,14 +112,17 @@ export function DataProvider({ children }) {
     const run = async () => {
       setLoading(true);
       try {
-        const { txns, accs, cats, bals, quickActions: qa } = await fetchAllData(user.id);
+        const { txns, accs, cats, bals, quickActions: qa, error } = await fetchAllData(user.id);
         if (!cancelled) {
+          if (error) toast.error('Gagal memuat data. Periksa koneksi lalu muat ulang.');
           setAllTransactions(txns);
           setAccounts(accs);
           setCategories(cats);
           setAccountBalances(bals);
           setQuickActions(qa);
         }
+      } catch {
+        if (!cancelled) toast.error('Gagal memuat data. Periksa koneksi lalu muat ulang.');
       } finally {
         if (!cancelled) setLoading(false);
       }

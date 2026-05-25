@@ -50,7 +50,7 @@ function QuickActionPopup({ action, onClose }) {
       if (error) throw error;
 
       toast.success('Transaksi berhasil ditambahkan!');
-      try { await refetch(); } catch {}
+      try { await refetch(); } catch { /* refetch is best-effort */ }
       onClose();
     } catch {
       toast.error('Gagal menambah transaksi');

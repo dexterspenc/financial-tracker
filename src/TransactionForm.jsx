@@ -101,7 +101,7 @@ function TransactionForm() {
 
     toast.success('Transaksi berhasil ditambahkan!');
     setFormData({ ...EMPTY_FORM, date: formData.date });
-    try { await refetch(); } catch {}
+    try { await refetch(); } catch { /* refetch is best-effort */ }
   };
 
   const submitTransfer = async () => {
@@ -162,7 +162,7 @@ function TransactionForm() {
 
     toast.success('Transfer berhasil dibuat!');
     setFormData({ ...EMPTY_FORM, date: formData.date });
-    try { await refetch(); } catch {}
+    try { await refetch(); } catch { /* refetch is best-effort */ }
   };
 
   // Normal transactions exclude valas accounts (storage-only, funded via transfer)

@@ -95,7 +95,7 @@ function EditModal({ transaction, onClose, onSuccess }) {
 
       onSuccess();
       onClose();
-      try { await refetch(); } catch {}
+      try { await refetch(); } catch { /* refetch is best-effort */ }
     } catch (err) {
       toast.error(err.message);
     } finally {
