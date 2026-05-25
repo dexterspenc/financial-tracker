@@ -8,7 +8,7 @@ import './EditModal.css';
 
 function EditModal({ transaction, onClose, onSuccess }) {
   const { updateTransaction } = useTransactions();
-  const { accounts, categories, refetch } = useData();
+  const { accounts, categories, allTransactions, refetch } = useData();
 
   const [formData, setFormData] = useState({
     date: '',
@@ -74,6 +74,24 @@ function EditModal({ transaction, onClose, onSuccess }) {
 
       const { error } = await updateTransaction(transaction.id, payload);
       if (error) throw error;
+
+      // Keep the paired transfer leg consistent: date/note always; amount only
+      // when both legs share a currency (cross-currency legs differ by design).
+      if (transaction.type === 'Transfer' && transaction.transferPairId) {
+        const pairLeg = allTransactions.find(
+          t => t.transferPairId === transaction.transferPairId && t.id !== transaction.id
+        );
+        if (pairLeg) {
+          const pairPayload = { date: formData.date, month, note: formData.note || null };
+          const thisCur = accounts.find(a => a.id === formData.accountId)?.currency || 'IDR';
+          const pairCur = accounts.find(a => a.id === pairLeg.accountId)?.currency || 'IDR';
+          if (thisCur === pairCur) {
+            if (pairLeg.debit > 0) { pairPayload.debit = amount; pairPayload.credit = 0; }
+            else { pairPayload.credit = amount; pairPayload.debit = 0; }
+          }
+          await updateTransaction(pairLeg.id, pairPayload);
+        }
+      }
 
       onSuccess();
       onClose();

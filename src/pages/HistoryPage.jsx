@@ -10,7 +10,7 @@ import './HistoryPage.css';
 
 function HistoryPage() {
   const { allTransactions: transactions, categories, loading, refetch } = useData();
-  const { deleteTransaction } = useTransactions();
+  const { deleteTransaction, deleteTransferPair } = useTransactions();
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [filters, setFilters] = useState({
     month: 'all',
@@ -53,7 +53,10 @@ function HistoryPage() {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    const { error } = await deleteTransaction(deleteTarget.id);
+    // Transfers are two linked rows — delete both legs so balances stay correct
+    const { error } = deleteTarget.transferPairId
+      ? await deleteTransferPair(deleteTarget.transferPairId)
+      : await deleteTransaction(deleteTarget.id);
     if (error) {
       toast.error(`Gagal hapus: ${error.message}`);
     } else {
@@ -226,7 +229,7 @@ function HistoryPage() {
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         title="Delete Transaction?"
         description={deleteTarget
-          ? `${deleteTarget.category} · Rp ${(deleteTarget.debit || deleteTarget.credit).toLocaleString('id-ID')}${deleteTarget.note ? ` · "${deleteTarget.note}"` : ''}`
+          ? `${deleteTarget.category} · Rp ${(deleteTarget.debit || deleteTarget.credit).toLocaleString('id-ID')}${deleteTarget.note ? ` · "${deleteTarget.note}"` : ''}${deleteTarget.transferPairId ? ' · Transfer: kedua sisi (masuk & keluar) akan dihapus.' : ''}`
           : ''}
         confirmLabel="Delete"
         confirmVariant="danger"

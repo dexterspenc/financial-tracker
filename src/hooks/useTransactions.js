@@ -50,5 +50,14 @@ export function useTransactions() {
     return { error };
   };
 
-  return { fetchTransactions, addTransaction, addTransactionPair, updateTransaction, deleteTransaction };
+  /** Delete both legs of a transfer in one request (matched by transfer_pair_id). */
+  const deleteTransferPair = async (pairId) => {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('transfer_pair_id', pairId);
+    return { error };
+  };
+
+  return { fetchTransactions, addTransaction, addTransactionPair, updateTransaction, deleteTransaction, deleteTransferPair };
 }
