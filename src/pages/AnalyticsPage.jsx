@@ -383,10 +383,15 @@ function AnalyticsPage() {
       }
     });
 
+    // Trim leading months with no data so the chart starts where the user's
+    // history starts (mirrors the net worth trend)
+    const firstIdx = months.findIndex(m => monthlyData[m].income > 0 || monthlyData[m].expense > 0);
+    const visible = firstIdx === -1 ? [] : months.slice(firstIdx);
+
     return {
-      months: months.map(m => monthlyData[m].label),
-      incomeData: months.map(m => monthlyData[m].income),
-      expenseData: months.map(m => monthlyData[m].expense),
+      months: visible.map(m => monthlyData[m].label),
+      incomeData: visible.map(m => monthlyData[m].income),
+      expenseData: visible.map(m => monthlyData[m].expense),
       weeklyData
     };
   };
@@ -1116,6 +1121,15 @@ function AnalyticsPage() {
     },
   };
 
+  // Headline for the Net Worth Trend card: latest value + change vs last month
+  const nwValues = netWorthTrend.values;
+  const netWorthNow = nwValues.length > 0 ? nwValues[nwValues.length - 1] : 0;
+  const netWorthPrev = nwValues.length >= 2 ? nwValues[nwValues.length - 2] : null;
+  const netWorthDiff = netWorthPrev === null ? null : netWorthNow - netWorthPrev;
+  const netWorthDiffPct = netWorthDiff !== null && netWorthPrev !== 0
+    ? (netWorthDiff / Math.abs(netWorthPrev)) * 100
+    : null;
+
   const netWorthChartData = {
     labels: netWorthTrend.labels,
     datasets: [
@@ -1680,19 +1694,39 @@ function AnalyticsPage() {
               <div className="trend-card">
                 <h2>Net Worth Trend</h2>
                 {netWorthTrend.values.length > 0 ? (
-                  <div className="line-chart-wrapper">
-                    <Line data={netWorthChartData} options={netWorthOptions} />
-                  </div>
+                  <>
+                    <div className="networth-trend-header">
+                      <div className="networth-trend-value">
+                        Rp {Math.round(netWorthNow).toLocaleString('id-ID')}
+                      </div>
+                      {netWorthDiff !== null && (
+                        <div className={`networth-trend-delta ${netWorthDiff >= 0 ? 'positive' : 'negative'}`}>
+                          {netWorthDiff >= 0 ? '+' : '−'}Rp {Math.abs(Math.round(netWorthDiff)).toLocaleString('id-ID')}
+                          {netWorthDiffPct !== null && (
+                            <> ({netWorthDiff >= 0 ? '+' : ''}{netWorthDiffPct.toFixed(1)}%)</>
+                          )}
+                          <span className="networth-trend-vs"> vs bulan lalu</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="line-chart-wrapper">
+                      <Line data={netWorthChartData} options={netWorthOptions} />
+                    </div>
+                  </>
                 ) : (
                   <div className="no-data">No data yet</div>
                 )}
               </div>
 
               <div className="trend-card">
-                <h2>12-Month Trend</h2>
-                <div className="line-chart-wrapper">
-                  <Line data={lineChartData} options={lineOptions} />
-                </div>
+                <h2>Income & Expense Trend</h2>
+                {trends.months.length > 0 ? (
+                  <div className="line-chart-wrapper">
+                    <Line data={lineChartData} options={lineOptions} />
+                  </div>
+                ) : (
+                  <div className="no-data">No data yet</div>
+                )}
               </div>
 
               <div className="weekly-card">

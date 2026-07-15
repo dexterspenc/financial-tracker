@@ -248,9 +248,14 @@ Last updated: 2026-05-25 (Session 10 — Valas accounts, transfer integrity, per
   - Titik bulan berjalan ditambah `investmentDelta` (live portfolio Mini-Aladdin) sehingga sama persis dengan angka Net Worth di Overview (`adjustedNetWorthBreakdown.netWorth`); CC balance ikut dihitung (negatif = utang)
   - Bulan-bulan sebelum data pertama (snapshot/transaksi paling awal) di-trim dari chart
   - Warna series `#2563eb` (brand-600), lolos validasi CVD/kontras terhadap hijau income + merah expense
-- ✅ Trend income/expense diperpanjang **6 → 12 bulan** (konstanta `TREND_MONTHS`); judul card jadi "12-Month Trend"
+- ✅ Trend income/expense diperpanjang **6 → 12 bulan** (konstanta `TREND_MONTHS`)
 - ✅ Verifikasi: logika `netWorthTrend` di-mirror ke script test dgn data sintetis (6 assertion: kumulatif, as_of_date, valas, trimming, empty, missing rate → semua pass); build bersih; lint AnalyticsPage identik dgn HEAD (4 err/2 warn pre-existing)
-- ⏳ Perlu cek visual di browser (butuh login + data live) — bagian review user
+
+**Follow-up dari review browser (sesi yang sama):**
+- ✅ Chart income/expense ikut di-trim ke bulan pertama ada data (konsisten dgn net worth; sebelumnya render 12 bulan penuh → garis nol Aug–Dec 25); fallback "No data yet" ditambahkan
+- ✅ Judul card "12-Month Trend" → **"Income & Expense Trend"** (jumlah bulan bisa < 12 setelah trim)
+- ✅ Headline di card Net Worth Trend: nilai net worth sekarang (match Overview) + delta vs bulan lalu (Rp & %, hijau/merah) — CSS `.networth-trend-*` di `AnalyticsPage.css`
+- Keputusan: jendela trend tetap **rolling 12 bulan** (bukan YTD) — YTD reset tiap Januari jadi 1 titik; rolling + trim memberi konteks setahun penuh begitu datanya ada
 
 ---
 

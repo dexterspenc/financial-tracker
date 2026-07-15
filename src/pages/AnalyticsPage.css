@@ -1229,6 +1229,34 @@
   position: relative;
 }
 
+/* ─── Net worth trend headline ───────────────────────────── */
+.networth-trend-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.networth-trend-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.networth-trend-delta {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.networth-trend-delta.positive { color: #10b981; }
+.networth-trend-delta.negative { color: #ef4444; }
+
+.networth-trend-vs {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
 /* ─── Category dot (matches donut slice color) ───────────── */
 .category-dot {
   width: 10px;
