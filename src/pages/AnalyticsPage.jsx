@@ -18,6 +18,8 @@ import AIAdvisor from '../components/AIAdvisor.jsx';
 import { toast } from '../components/ui/Toast';
 import './AnalyticsPage.css';
 
+const TREND_MONTHS = 12;
+
 function AnalyticsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -169,6 +171,64 @@ function AnalyticsPage() {
     );
   }, [investmentOverrides, openingBalances, allTransactions]);
 
+  // Net worth at the end of each of the last TREND_MONTHS months. Balance
+  // snapshots count from their as_of_date onward (so accounts opened later
+  // don't inflate earlier months). Valas balances are accumulated in native
+  // currency and converted with today's rates — historical FX isn't stored,
+  // so the curve reflects money flows, not exchange-rate movement. The
+  // current-month point adds investmentDelta to match the Overview number.
+  const netWorthTrend = useMemo(() => {
+    const monthKeys = [];
+    const idxByKey = {};
+    for (let i = TREND_MONTHS - 1; i >= 0; i--) {
+      const key = format(subMonths(new Date(), i), 'yyyy-MM');
+      idxByKey[key] = monthKeys.length;
+      monthKeys.push(key);
+    }
+    const currentKey = monthKeys[monthKeys.length - 1];
+
+    const currencyById = {};
+    accounts.forEach(a => {
+      if (a.currency && a.currency !== 'IDR') currencyById[a.id] = a.currency;
+    });
+
+    // Per currency: total predating the window + delta per window month
+    const series = {};
+    let firstKey = null;
+    const add = (accountId, monthKey, amount) => {
+      if (!accountId || !monthKey || monthKey > currentKey) return;
+      if (!firstKey || monthKey < firstKey) firstKey = monthKey;
+      const cur = currencyById[accountId] || 'IDR';
+      if (!series[cur]) series[cur] = { base: 0, deltas: new Array(monthKeys.length).fill(0) };
+      if (monthKey in idxByKey) series[cur].deltas[idxByKey[monthKey]] += amount;
+      else series[cur].base += amount;
+    };
+
+    accountBalances.forEach(ab => {
+      add(ab.account_id, ab.as_of_date?.substring(0, 7), Number(ab.balance) || 0);
+    });
+    allTransactions.forEach(t => {
+      add(t.accountId, (t.month || t.date)?.substring(0, 7), (t.credit || 0) - (t.debit || 0));
+    });
+
+    if (!firstKey) return { labels: [], values: [] };
+
+    const labels = [];
+    const values = [];
+    const running = {};
+    monthKeys.forEach((key, i) => {
+      let total = 0;
+      Object.entries(series).forEach(([cur, s]) => {
+        running[cur] = (running[cur] ?? s.base) + s.deltas[i];
+        total += toIDR(running[cur], cur, exchangeRates);
+      });
+      if (key < firstKey) return; // months before the first snapshot/transaction
+      labels.push(format(new Date(key + '-01'), 'MMM yyyy'));
+      values.push(key === currentKey ? total + investmentDelta : total);
+    });
+    return { labels, values };
+  }, [accounts, accountBalances, allTransactions, exchangeRates, investmentDelta]);
+
   // analytics with Investment balance replaced by live portfolio total and
   // valas purpose balances converted to IDR
   const adjustedAnalytics = useMemo(() => {
@@ -303,7 +363,7 @@ function AnalyticsPage() {
     const monthlyData = {};
     const weeklyData = [0, 0, 0, 0, 0];
 
-    for (let i = 5; i >= 0; i--) {
+    for (let i = TREND_MONTHS - 1; i >= 0; i--) {
       const date = subMonths(new Date(), i);
       const monthKey = format(date, 'yyyy-MM');
       months.push(monthKey);
@@ -1056,6 +1116,45 @@ function AnalyticsPage() {
     },
   };
 
+  const netWorthChartData = {
+    labels: netWorthTrend.labels,
+    datasets: [
+      {
+        label: 'Net Worth',
+        data: netWorthTrend.values,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,0.10)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: '#2563eb',
+      },
+    ],
+  };
+
+  const netWorthOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ` Rp ${Math.round(ctx.parsed.y).toLocaleString('id-ID')}`,
+        },
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
+      y: {
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: {
+          font: { family: 'Inter', size: 11 },
+          callback: (v) => `${(v / 1000000).toFixed(0)}M`,
+        },
+      },
+    },
+  };
+
   const lineChartData = {
     labels: trends.months,
     datasets: [
@@ -1579,7 +1678,18 @@ function AnalyticsPage() {
           {activeTab === 'trends' && (
             <>
               <div className="trend-card">
-                <h2>6-Month Trend</h2>
+                <h2>Net Worth Trend</h2>
+                {netWorthTrend.values.length > 0 ? (
+                  <div className="line-chart-wrapper">
+                    <Line data={netWorthChartData} options={netWorthOptions} />
+                  </div>
+                ) : (
+                  <div className="no-data">No data yet</div>
+                )}
+              </div>
+
+              <div className="trend-card">
+                <h2>12-Month Trend</h2>
                 <div className="line-chart-wrapper">
                   <Line data={lineChartData} options={lineOptions} />
                 </div>

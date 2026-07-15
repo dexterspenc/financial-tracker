@@ -240,6 +240,18 @@ Last updated: 2026-05-25 (Session 10 — Valas accounts, transfer integrity, per
 - ✅ Empty best-effort `catch {}` blocks annotated (no-empty)
 - Note: remaining lint warnings (react-refresh/only-export-components, exhaustive-deps, use-before-declare in SettingsPage) are framework/strictness cosmetics, not bugs — deferred intentionally.
 
+### P9 — Session 11: Net Worth Trend Chart di Tab Trends (2026-07-15)
+
+- ✅ `src/pages/AnalyticsPage.jsx` — card baru **"Net Worth Trend"** di paling atas tab Trends: line chart 12 bulan berisi net worth di akhir tiap bulan (memo `netWorthTrend`)
+  - Snapshot `account_balances` dihitung mulai `as_of_date`-nya (akun yang dibuka belakangan, mis. valas per Jun 2026, tidak menggelembungkan bulan-bulan sebelumnya)
+  - Valas diakumulasi dalam native currency per mata uang, dikonversi pakai kurs live hari ini (kurs historis tidak disimpan → kurva murni mencerminkan arus uang, bukan pergerakan kurs)
+  - Titik bulan berjalan ditambah `investmentDelta` (live portfolio Mini-Aladdin) sehingga sama persis dengan angka Net Worth di Overview (`adjustedNetWorthBreakdown.netWorth`); CC balance ikut dihitung (negatif = utang)
+  - Bulan-bulan sebelum data pertama (snapshot/transaksi paling awal) di-trim dari chart
+  - Warna series `#2563eb` (brand-600), lolos validasi CVD/kontras terhadap hijau income + merah expense
+- ✅ Trend income/expense diperpanjang **6 → 12 bulan** (konstanta `TREND_MONTHS`); judul card jadi "12-Month Trend"
+- ✅ Verifikasi: logika `netWorthTrend` di-mirror ke script test dgn data sintetis (6 assertion: kumulatif, as_of_date, valas, trimming, empty, missing rate → semua pass); build bersih; lint AnalyticsPage identik dgn HEAD (4 err/2 warn pre-existing)
+- ⏳ Perlu cek visual di browser (butuh login + data live) — bagian review user
+
 ---
 
 ## Known Bugs / In Progress
