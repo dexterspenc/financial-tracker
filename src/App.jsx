@@ -17,6 +17,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 
 function RouteFallback() {
   return (
@@ -37,6 +38,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
               {/* Protected routes — ProtectedRoute renders Outlet + BottomNav + AIAdvisorWidget */}
               <Route element={<DataProvider><AIChatProvider><ProtectedRoute /></AIChatProvider></DataProvider>}>

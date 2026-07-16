@@ -12,10 +12,15 @@ function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleGoogle = async () => {
+    if (!consent) {
+      toast.error('Centang persetujuan kebijakan privasi dulu ya');
+      return;
+    }
     setGoogleLoading(true);
     const { error } = await signInWithGoogle();
     if (error) {
@@ -26,6 +31,10 @@ function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!consent) {
+      toast.error('Centang persetujuan kebijakan privasi dulu ya');
+      return;
+    }
     if (form.password !== form.confirm) {
       toast.error('Kata sandi tidak cocok');
       return;
@@ -124,6 +133,18 @@ function RegisterPage() {
               />
             </div>
           </div>
+
+          <label className="auth-consent">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+            />
+            <span>
+              Saya setuju data saya diproses sesuai{' '}
+              <Link to="/privacy" className="auth-link" target="_blank">Kebijakan Privasi</Link>
+            </span>
+          </label>
 
           <button type="submit" className="btn btn-primary btn-full btn-lg auth-submit" disabled={loading}>
             {loading ? <span className="spinner" /> : <><UserPlus size={17} /> Buat Akun</>}

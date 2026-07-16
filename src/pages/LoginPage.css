@@ -40,6 +40,27 @@
   color: var(--text-muted);
 }
 
+/* ── Consent ── */
+.auth-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-consent input[type='checkbox'] {
+  margin-top: 2px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: var(--brand-primary, #4f46e5);
+  cursor: pointer;
+}
+
 /* ── Form ── */
 .auth-form {
   display: flex;
