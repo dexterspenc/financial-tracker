@@ -1,18 +1,23 @@
 import { supabase } from '../lib/supabase';
 import { normalizeTxn } from '../utils/normalizeTxn';
+import { fetchAllRows } from '../utils/fetchAllRows';
 export { normalizeTxn } from '../utils/normalizeTxn';
 
 const SELECT_WITH_JOINS = '*, accounts(id, name, purpose), categories(id, name, flow_type)';
 
 export function useTransactions() {
   const fetchTransactions = async (userId) => {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select(SELECT_WITH_JOINS)
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
-    return { data: data ? data.map(normalizeTxn) : [], error };
+    const { data, error } = await fetchAllRows((from, to) =>
+      supabase
+        .from('transactions')
+        .select(SELECT_WITH_JOINS)
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to)
+    );
+    return { data: data.map(normalizeTxn), error };
   };
 
   const addTransaction = async (payload) => {

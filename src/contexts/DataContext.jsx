@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 import { normalizeTxn } from '../utils/normalizeTxn';
+import { fetchAllRows } from '../utils/fetchAllRows';
 import { fetchRates } from '../utils/exchangeRates';
 import { toast } from '../components/ui/Toast';
 
@@ -34,12 +35,16 @@ const fetchPortfolioHoldings = async (userId) => {
 // Fetch functions defined at module scope — no hook factory imports, no TDZ risk
 const fetchAllData = async (userId) => {
   const [txnRes, accRes, catRes, balRes, settingsRes] = await Promise.all([
-    supabase
-      .from('transactions')
-      .select(SELECT_TXN)
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false }),
+    fetchAllRows((from, to) =>
+      supabase
+        .from('transactions')
+        .select(SELECT_TXN)
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to)
+    ),
     supabase
       .from('accounts')
       .select('id, name, purpose, sort_order, is_active, is_credit_account, credit_limit, statement_date, due_date, currency')
